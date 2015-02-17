@@ -70,6 +70,7 @@ The following is a list of people who have contributed to **DFHack**.
 - MithrilTuxedo
 - AndreasPK
 - cdombroski
+- jlogsdon
 
 And those are the cool people who made **stonesense**.
 
