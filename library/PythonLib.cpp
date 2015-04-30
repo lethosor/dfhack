@@ -87,7 +87,9 @@ bool Python::LoadLibrary(std::string path)
 }
 #undef DFH_PY_BIND
 
-#define DFH_PY_FUNC(rtype, name, args) rtype (*DFHack::Python::name) args = 0;
+namespace DFHack { namespace Python {
+#define DFH_PY_FUNC(rtype, name, args) rtype (*name) args = 0;
 #include "PythonLibStubs.h"
 #undef DFH_PY_FUNC
+}}
 

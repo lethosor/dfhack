@@ -22,6 +22,8 @@ DFHACK_PLUGIN(tilesieve tilesieve.cpp)
 DFHACK_PLUGIN(vshook vshook.cpp)
 DFHACK_PLUGIN(zoom zoom.cpp)
 
+DFHACK_PLUGIN(python-test python-test.cpp)
+
 IF(UNIX)
 DFHACK_PLUGIN(ref-index ref-index.cpp)
 ENDIF()
