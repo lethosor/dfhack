@@ -100,6 +100,7 @@
 #include "tweaks/stable-cursor.h"
 #include "tweaks/title-start-rename.h"
 #include "tweaks/tradereq-pet-gender.h"
+#include "tweaks/trap-wear.h"
 
 using std::set;
 using std::vector;
@@ -294,6 +295,10 @@ DFhackCExport command_result plugin_init (color_ostream &out, std::vector <Plugi
     TWEAK_HOOK("title-start-rename", title_start_rename_hook, render);
 
     TWEAK_HOOK("tradereq-pet-gender", pet_gender_hook, render);
+
+    TWEAK_HOOK("trap-wear", trap_wear_hook_trapcomp, checkWearDestroy);
+    TWEAK_HOOK("trap-wear", trap_wear_hook_trappart, checkWearDestroy);
+    TWEAK_HOOK("trap-wear", trap_wear_hook_weapon, checkWearDestroy);
 
     return CR_OK;
 }
