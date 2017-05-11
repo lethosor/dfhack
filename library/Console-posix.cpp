@@ -142,10 +142,12 @@ namespace rl {
     void (*rl_redisplay)(void) = nullptr;
     int (*rl_clear_visible_line)(void) = nullptr;
     int (*rl_reset_line_state)(void) = nullptr;
+    void (*rl_prep_terminal)(int) = nullptr;
 
     const char **rl_library_version = nullptr;
     FILE **rl_outstream = nullptr;
     int (**rl_getc_function)(FILE*) = nullptr;
+    void (**rl_prep_term_function)(int) = nullptr;
 
     std::vector<std::string> library_names = {
     #ifdef _DARWIN
@@ -162,6 +164,7 @@ namespace rl {
     };
 
     int getc_hook(FILE*);
+    void prep_term_hook(int);
 }
 
 namespace DFHack
@@ -220,11 +223,15 @@ namespace DFHack
             bind(rl_redisplay);
             bind(rl_clear_visible_line);
             bind(rl_reset_line_state);
+            bind(rl_prep_terminal);
+
             bind(rl_outstream);
             bind(rl_getc_function);
+            bind(rl_prep_term_function);
         #undef bind
 
             *rl::rl_getc_function = rl::getc_hook;
+            *rl::rl_prep_term_function = rl::prep_term_hook;
 
             fprintf(stderr, "readline bind successful\n");
             return true;
@@ -484,7 +491,7 @@ namespace DFHack
             raw.c_oflag &= ~(OPOST);
             // control modes - set 8 bit chars
             raw.c_cflag |= (CS8);
-            // local modes - choing off, canonical off, no extended functions,
+            // local modes - echoing off, canonical off, no extended functions,
             // no signal chars (^Z,^C)
 #ifdef CONSOLE_NO_CATCH
             raw.c_lflag &= ~( ECHO | ICANON | IEXTEN );
@@ -563,11 +570,8 @@ namespace DFHack
             unsigned char ch;
             if (!read_char(ch))
                 return -1;
-            // int ch = getc(file);
-            if (ch == 3) {
-                errno = EAGAIN;
+            if (ch == 3)
                 return -1;
-            }
             return ch;
         }
 
@@ -582,7 +586,10 @@ namespace DFHack
             const char *line = rl::readline(prompt.c_str());
             lock->lock();
             if (!line)
+            {
+                print("\n");
                 line = "";
+            }
             raw_buffer = line;
             return raw_buffer.size();
         }
@@ -876,6 +883,20 @@ int rl::getc_hook(FILE* file) {
         return priv->readline_getc(file);
     else
         return getc(file);
+}
+
+void rl::prep_term_hook(int meta_flag)
+{
+    // Override rl_prep_terminal so that ctrl-C actually produces a character (3),
+    // which we detect in Private::readline_getc()
+    rl::rl_prep_terminal(meta_flag);
+    struct termios tios;
+    if (tcgetattr(STDIN_FILENO, &tios) == -1)
+        return;
+
+    tios.c_lflag &= ~(ISIG);
+    if (tcsetattr(STDIN_FILENO, TCSADRAIN, &tios) == -1)
+        return;
 }
 
 Console::Console()
