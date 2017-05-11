@@ -178,6 +178,10 @@ namespace DFHack
             state = con_unclaimed;
 
             readline_enabled = readline_bind();
+            if (readline_enabled)
+            {
+                fprintf(stderr, "using readline\n");
+            }
         };
         virtual ~Private()
         {
@@ -186,31 +190,43 @@ namespace DFHack
     private:
         bool readline_bind()
         {
+            if (getenv("DFHACK_NO_READLINE"))
+            {
+                fprintf(stderr, "DFHACK_NO_READLINE given; falling back to old console\n");
+                return false;
+            }
             void *handle = nullptr;
-            for (std::string lib : rl::library_names) {
+            std::string path;
+            for (std::string lib : rl::library_names)
+            {
                 if ((handle = dlopen(lib.c_str(), RTLD_LOCAL)))
+                {
+                    path = lib;
                     break;
+                }
                 else
                     fprintf(stderr, "%s\n", dlerror());
             }
+            fprintf(stderr, "readline path: %s\n", path.c_str());
 
         #define bind(name) do { if (!(rl::name = (decltype(rl::name))dlsym(handle, #name))) { \
                                 fprintf(stderr, "bind failed: %s\n", #name); return false; } \
                             } while(0)
+            bind(rl_library_version);
+            fprintf(stderr, "readline version: %s\n", *rl::rl_library_version);
             bind(readline);
             bind(add_history);
             bind(rl_clear_history);
             bind(rl_redisplay);
             bind(rl_clear_visible_line);
             bind(rl_reset_line_state);
-            bind(rl_library_version);
             bind(rl_outstream);
             bind(rl_getc_function);
         #undef bind
-            fprintf(stderr, "loaded readline version: %s\n", *rl::rl_library_version);
 
             *rl::rl_getc_function = rl::getc_hook;
 
+            fprintf(stderr, "readline bind successful\n");
             return true;
         }
 
