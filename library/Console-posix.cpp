@@ -185,6 +185,10 @@ namespace DFHack
             {
                 fprintf(stderr, "using readline\n");
             }
+            else
+            {
+                fprintf(stderr, "readline disabled\n");
+            }
         };
         virtual ~Private()
         {
@@ -202,13 +206,18 @@ namespace DFHack
             std::string path;
             for (std::string lib : rl::library_names)
             {
-                if ((handle = dlopen(lib.c_str(), RTLD_LOCAL)))
+                if ((handle = dlopen(lib.c_str(), RTLD_NOW | RTLD_LOCAL)))
                 {
                     path = lib;
                     break;
                 }
                 else
                     fprintf(stderr, "%s\n", dlerror());
+            }
+            if (!handle)
+            {
+                fprintf(stderr, "could not load readline\n");
+                return false;
             }
             fprintf(stderr, "readline path: %s\n", path.c_str());
 
