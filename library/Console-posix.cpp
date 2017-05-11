@@ -574,6 +574,11 @@ namespace DFHack
         int prompt_loop_readline(recursive_mutex *lock, CommandHistory &history)
         {
             lock->unlock();
+            rl::rl_clear_history();
+            for (int i = int(history.size()) - 1; i >= 0; i--)
+            {
+                rl::add_history(history[i].c_str());
+            }
             const char *line = rl::readline(prompt.c_str());
             lock->lock();
             if (!line)
