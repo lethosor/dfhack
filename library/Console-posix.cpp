@@ -59,7 +59,9 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <sys/ioctl.h>
 #include <termios.h>
 #include <errno.h>
+#include <dlfcn.h>
 #include <deque>
+#include <vector>
 
 // George Vulov for MacOSX
 #ifndef __LINUX__
@@ -133,6 +135,35 @@ const char * getANSIColor(const int c)
     }
 }
 
+namespace rl {
+    char* (*readline)(const char *prompt) = nullptr;
+    void (*add_history)(const char*) = nullptr;
+    void (*rl_clear_history)(void) = nullptr;
+    void (*rl_redisplay)(void) = nullptr;
+    int (*rl_clear_visible_line)(void) = nullptr;
+    int (*rl_reset_line_state)(void) = nullptr;
+
+    const char **rl_library_version = nullptr;
+    FILE **rl_outstream = nullptr;
+    int (**rl_getc_function)(FILE*) = nullptr;
+
+    std::vector<std::string> library_names = {
+    #ifdef _DARWIN
+        "libreadline.7.0.dylib",
+        "libreadline.7.dylib",
+        "libreadline.dylib",
+        "libreadline.6.dylib",
+    #else
+        "libreadline.so.7.0",
+        "libreadline.so.7",
+        "libreadline.so",
+        "libreadline.so.6",
+    #endif
+    };
+
+    int getc_hook(FILE*);
+}
+
 namespace DFHack
 {
     class Private
@@ -145,12 +176,44 @@ namespace DFHack
             in_batch = false;
             supported_terminal = false;
             state = con_unclaimed;
+
+            readline_enabled = readline_bind();
         };
         virtual ~Private()
         {
             //sync();
         }
     private:
+        bool readline_bind()
+        {
+            void *handle = nullptr;
+            for (std::string lib : rl::library_names) {
+                if ((handle = dlopen(lib.c_str(), RTLD_LOCAL)))
+                    break;
+                else
+                    fprintf(stderr, "%s\n", dlerror());
+            }
+
+        #define bind(name) do { if (!(rl::name = (decltype(rl::name))dlsym(handle, #name))) { \
+                                fprintf(stderr, "bind failed: %s\n", #name); return false; } \
+                            } while(0)
+            bind(readline);
+            bind(add_history);
+            bind(rl_clear_history);
+            bind(rl_redisplay);
+            bind(rl_clear_visible_line);
+            bind(rl_reset_line_state);
+            bind(rl_library_version);
+            bind(rl_outstream);
+            bind(rl_getc_function);
+        #undef bind
+            fprintf(stderr, "loaded readline version: %s\n", *rl::rl_library_version);
+
+            *rl::rl_getc_function = rl::getc_hook;
+
+            return true;
+        }
+
         bool read_char(unsigned char & out)
         {
             FD_ZERO(&descriptor_set);
@@ -351,6 +414,17 @@ namespace DFHack
                 //SDL_recursive_mutexP(lock);
                 return output.size();
             }
+            else if (readline_enabled)
+            {
+                if(state == con_lineedit)
+                    return -1;
+                state = con_lineedit;
+                int count = prompt_loop(lock,ch);
+                state = con_unclaimed;
+                if (count != -1)
+                    output = raw_buffer;
+                return count;
+            }
             else
             {
                 int count;
@@ -375,6 +449,14 @@ namespace DFHack
 
             if (!supported_terminal)
                 return -1;
+
+            if (readline_enabled)
+            {
+                rl::rl_reset_line_state();
+                rawmode = 1;
+                return 0;
+            }
+
             if (tcgetattr(STDIN_FILENO,&orig_termios) == -1)
                 return -1;
 
@@ -405,12 +487,22 @@ namespace DFHack
 
         void disable_raw()
         {
+            if (readline_enabled)
+            {
+                rl::rl_clear_visible_line();
+                return;
+            }
             /* Don't even check the return value as it's too late. */
             if (rawmode && tcsetattr(STDIN_FILENO, TCSADRAIN, &orig_termios) != -1)
                 rawmode = 0;
         }
         void prompt_refresh()
         {
+            if (readline_enabled)
+            {
+                rl::rl_redisplay();
+                return;
+            }
             char seq[64];
             int cols = get_columns();
             int plen = prompt.size();
@@ -442,7 +534,39 @@ namespace DFHack
             if (::write(STDIN_FILENO,seq,strlen(seq)) == -1) return;
         }
 
-        int prompt_loop(recursive_mutex * lock, CommandHistory & history)
+        int prompt_loop(recursive_mutex *lock, CommandHistory &history)
+        {
+            if (readline_enabled)
+                return prompt_loop_readline(lock, history);
+            else
+                return prompt_loop_basic(lock, history);
+        }
+
+        int readline_getc(FILE *file)
+        {
+            unsigned char ch;
+            if (!read_char(ch))
+                return -1;
+            // int ch = getc(file);
+            if (ch == 3) {
+                errno = EAGAIN;
+                return -1;
+            }
+            return ch;
+        }
+
+        int prompt_loop_readline(recursive_mutex *lock, CommandHistory &history)
+        {
+            lock->unlock();
+            const char *line = rl::readline(prompt.c_str());
+            lock->lock();
+            if (!line)
+                line = "";
+            raw_buffer = line;
+            return raw_buffer.size();
+        }
+
+        int prompt_loop_basic(recursive_mutex *lock, CommandHistory &history)
         {
             int fd = STDIN_FILENO;
             size_t plen = prompt.size();
@@ -719,7 +843,18 @@ namespace DFHack
         // thread exit mechanism
         int exit_pipe[2];
         fd_set descriptor_set;
+
+        bool readline_enabled;
     };
+}
+
+DFHack::Private *priv = nullptr;
+
+int rl::getc_hook(FILE* file) {
+    if (priv)
+        return priv->readline_getc(file);
+    else
+        return getc(file);
 }
 
 Console::Console()
@@ -749,8 +884,13 @@ bool Console::init(bool sharing)
     if (!freopen("stdout.log", "w", stdout))
         ;
     d = new Private();
+    priv = d;
     // make our own weird streams so our IO isn't redirected
     d->dfout_C = fopen("/dev/tty", "w");
+    if (d->readline_enabled)
+    {
+        *rl::rl_outstream = d->dfout_C;
+    }
     std::cin.tie(this);
     clear();
     d->supported_terminal = !isUnsupportedTerm() &&  isatty(STDIN_FILENO);
