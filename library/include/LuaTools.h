@@ -356,8 +356,8 @@ namespace DFHack {namespace Lua {
     namespace Event {
         struct DFHACK_EXPORT Owner {
             virtual ~Owner() {}
-            virtual void on_count_changed(int new_cnt, int delta) {}
-            virtual void on_invoked(lua_State *state, int nargs, bool from_c) {}
+            virtual void on_count_changed(int new_cnt, int delta) = 0;
+            virtual void on_invoked(lua_State *state, int nargs, bool from_c) = 0;
         };
 
         DFHACK_EXPORT void New(lua_State *state, Owner *owner = NULL);
