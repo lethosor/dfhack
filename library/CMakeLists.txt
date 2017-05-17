@@ -101,13 +101,6 @@ PlugLoad-posix.cpp
 Process-darwin.cpp
 )
 
-SET(MAIN_SOURCES_LINUX_EGGY
-Console-linux.cpp
-Hooks-egg.cpp
-PlugLoad-linux.cpp
-Process-linux.cpp
-)
-
 SET(MODULE_HEADERS
 include/modules/Buildings.h
 include/modules/Burrows.h
@@ -160,7 +153,6 @@ modules/Screen.cpp
 modules/Translation.cpp
 modules/Units.cpp
 modules/Vermin.cpp
-modules/Windows.cpp
 modules/World.cpp
 )
 
@@ -198,10 +190,7 @@ LIST(APPEND PROJECT_SOURCES ${MAIN_SOURCES})
 LIST(APPEND PROJECT_SOURCES ${MODULE_SOURCES})
 
 IF(UNIX)
-    OPTION(BUILD_EGGY "Make DFHack strangely egg-shaped." OFF)
-    IF(BUILD_EGGY)
-        LIST(APPEND PROJECT_SOURCES ${MAIN_SOURCES_LINUX_EGGY})
-    ELSEIF(APPLE)
+    IF(APPLE)
         LIST(APPEND PROJECT_SOURCES ${MAIN_SOURCES_DARWIN})
     ELSE()
         LIST(APPEND PROJECT_SOURCES ${MAIN_SOURCES_LINUX})
@@ -327,13 +316,9 @@ ADD_EXECUTABLE(dfhack-run dfhack-run.cpp)
 ADD_EXECUTABLE(binpatch binpatch.cpp)
 TARGET_LINK_LIBRARIES(binpatch dfhack-md5)
 
-IF(BUILD_EGGY)
-    SET_TARGET_PROPERTIES(dfhack PROPERTIES OUTPUT_NAME "egg" )
-else()
-    IF(WIN32)
-        SET_TARGET_PROPERTIES(dfhack PROPERTIES OUTPUT_NAME "SDL" )
-    ENDIF()
-endif()
+IF(WIN32)
+    SET_TARGET_PROPERTIES(dfhack PROPERTIES OUTPUT_NAME "SDL" )
+ENDIF()
 
 IF(WIN32)
     SET_TARGET_PROPERTIES(dfhack PROPERTIES COMPILE_FLAGS "/FI\"Export.h\"" )
@@ -388,23 +373,15 @@ IF(UNIX)
             DESTINATION .)
     endif()
 ELSE()
-    if(NOT BUILD_EGGY)
-        # On windows, copy the renamed SDL so DF can still run.
-        install(PROGRAMS ${dfhack_SOURCE_DIR}/package/windows/win${DFHACK_BUILD_ARCH}/SDLreal.dll
-                DESTINATION ${DFHACK_LIBRARY_DESTINATION})
-    endif()
+    # On windows, copy the renamed SDL so DF can still run.
+    install(PROGRAMS ${dfhack_SOURCE_DIR}/package/windows/win${DFHACK_BUILD_ARCH}/SDLreal.dll
+            DESTINATION ${DFHACK_LIBRARY_DESTINATION})
 ENDIF()
 
 #install the main lib
-if(NOT BUILD_EGGY)
-    install(TARGETS dfhack
-            LIBRARY DESTINATION ${DFHACK_LIBRARY_DESTINATION}
-            RUNTIME DESTINATION ${DFHACK_LIBRARY_DESTINATION})
-else()
-    install(TARGETS dfhack
-            LIBRARY DESTINATION ${DFHACK_EGGY_DESTINATION}
-            RUNTIME DESTINATION ${DFHACK_EGGY_DESTINATION})
-endif()
+install(TARGETS dfhack
+        LIBRARY DESTINATION ${DFHACK_LIBRARY_DESTINATION}
+        RUNTIME DESTINATION ${DFHACK_LIBRARY_DESTINATION})
 
 #install the offset file
 install(FILES xml/symbols.xml

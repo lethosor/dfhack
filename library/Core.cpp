@@ -52,7 +52,6 @@ using namespace std;
 #include "modules/Gui.h"
 #include "modules/World.h"
 #include "modules/Graphic.h"
-#include "modules/Windows.h"
 #include "RemoteServer.h"
 #include "LuaTools.h"
 #include "DFHackVersion.h"
@@ -1414,7 +1413,6 @@ Core::Core()
     last_local_map_ptr = NULL;
     last_pause_state = false;
     top_viewscreen = NULL;
-    screen_window = NULL;
     server = NULL;
 
     color_ostream::log_errors_to_stderr = true;
@@ -1632,8 +1630,6 @@ bool Core::Init()
     // set up hotkey capture
     thread * HK = new thread(fHKthread, (void *) temp);
     (void)HK;
-    screen_window = new Windows::top_level_window();
-    screen_window->addChild(new Windows::dfhack_dummy(5,10));
     started = true;
     modstate = 0;
 
@@ -1833,14 +1829,6 @@ void Core::Resume()
 
     if (--d->df_suspend_depth == 0)
         d->core_cond.Unlock();
-}
-
-int Core::TileUpdate()
-{
-    if(!started)
-        return false;
-    screen_window->paint();
-    return true;
 }
 
 int Core::ClaimSuspend(bool force_base)

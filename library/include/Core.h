@@ -65,10 +65,6 @@ namespace DFHack
     class PluginManager;
     class Core;
     class ServerMain;
-    namespace Windows
-    {
-        class df_window;
-    }
 
     enum state_change_event
     {
@@ -180,7 +176,6 @@ namespace DFHack
 
         DFHack::Process * p;
         DFHack::VersionInfo * vinfo;
-        DFHack::Windows::df_window * screen_window;
 
         static void print(const char *format, ...);
         static void printerr(const char *format, ...);
@@ -202,9 +197,8 @@ namespace DFHack
         void DisclaimSuspend(int level);
 
         bool Init();
-        int Update (void);
-        int TileUpdate (void);
-        int Shutdown (void);
+        int Update();
+        int Shutdown();
         int DFH_SDL_Event(SDL::Event* event);
         bool ncurses_wgetch(int in, int & out);
 
