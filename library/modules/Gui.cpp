@@ -140,6 +140,7 @@ static std::map<virtual_identity*, getFocusStringHandler> getFocusStringHandlers
 
 DEFINE_GET_FOCUS_STRING_HANDLER(dwarfmode)
 {
+    (void)screen;
     using namespace df::enums::ui_sidebar_mode;
 
     using df::global::ui_workshop_in_add;
@@ -244,7 +245,7 @@ DEFINE_GET_FOCUS_STRING_HANDLER(dwarfmode)
     case ViewUnits:
         if (ui_selected_unit)
         {
-            if (auto unit = vector_get(world->units.active, *ui_selected_unit))
+            if (vector_get(world->units.active, *ui_selected_unit))
             {
                 focus += "/Some";
 
@@ -358,6 +359,7 @@ DEFINE_GET_FOCUS_STRING_HANDLER(dwarfmode)
 
 DEFINE_GET_FOCUS_STRING_HANDLER(dungeonmode)
 {
+    (void)screen;
     using df::global::ui_advmode;
 
     if (!ui_advmode)
@@ -1614,7 +1616,7 @@ bool Gui::getMousePos (int32_t & x, int32_t & y)
     return (x == -1) ? false : true;
 }
 
-int getDepthAt_default (int32_t x, int32_t y)
+int getDepthAt_default (int32_t /*x*/, int32_t /*y*/)
 {
     return 0;
 }

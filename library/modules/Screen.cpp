@@ -95,7 +95,7 @@ bool Screen::inGraphicsMode()
     return init && init->display.flag.is_set(init_display_flags::USE_GRAPHICS);
 }
 
-static void doSetTile_default(const Pen &pen, int x, int y, bool map)
+static void doSetTile_default(const Pen &pen, int x, int y, bool /*map*/)
 {
     int index = ((x * gps->dimy) + y);
     auto screen = gps->screen + index*4;
@@ -525,8 +525,8 @@ void PenArray::draw(unsigned int x, unsigned int y, unsigned int width, unsigned
     {
         for (unsigned int gridy = y; gridy < y + height; gridy++)
         {
-            if (gridx >= gps->dimx ||
-                gridy >= gps->dimy ||
+            if (int(gridx) >= gps->dimx ||
+                int(gridy) >= gps->dimy ||
                 gridx - x + bufx >= dimx ||
                 gridy - y + bufy >= dimy)
                 continue;

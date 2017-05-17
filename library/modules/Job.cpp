@@ -389,6 +389,7 @@ bool DFHack::Job::removeJob(df::job *job) {
         //a great way of recovering since we can't properly destroy the job & we can't leave it
         //around.  Better to know the moment that becomes a problem.
         bool success = disconnectJobGeneralRef(job, ref);
+        (void)success;
         assert(success);
 
         vector_erase_at(job->general_refs, 0);
@@ -514,7 +515,7 @@ bool DFHack::Job::removePostings(df::job *job, bool remove_all)
     bool removed = false;
     if (!remove_all)
     {
-        if (job->posting_index >= 0 && job->posting_index < world->job_postings.size())
+        if (job->posting_index >= 0 && job->posting_index < int(world->job_postings.size()))
         {
             world->job_postings[job->posting_index]->flags.bits.dead = true;
             removed = true;

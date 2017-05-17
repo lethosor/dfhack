@@ -221,6 +221,14 @@ STRING(REPLACE "/proto/" "/proto/tmp/" PROJECT_PROTO_TMP_FILES "${PROJECT_PROTO_
 SET_SOURCE_FILES_PROPERTIES(${PROJECT_PROTO_SRCS} ${PROJECT_PROTO_HDRS}
     PROPERTIES GENERATED TRUE)
 
+# Disable unused parameter warnings (fix requires changing/upgrading protobuf)
+IF(UNIX)
+    SET_PROPERTY(SOURCE ${PROJECT_PROTO_SRCS}
+        APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-unused-parameter ")
+ELSE()
+    # TODO: Windows equivalent?
+ENDIF()
+
 # Force a re-gen if any *.pb.* files are missing
 # (only runs when cmake is run, but better than nothing)
 FOREACH(file IN LISTS PROJECT_PROTO_SRCS PROJECT_PROTO_HDRS)

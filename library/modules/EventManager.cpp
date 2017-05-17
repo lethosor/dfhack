@@ -133,7 +133,7 @@ static void manageInvasionEvent(color_ostream& out);
 static void manageEquipmentEvent(color_ostream& out);
 static void manageReportEvent(color_ostream& out);
 static void manageUnitAttackEvent(color_ostream& out);
-static void manageUnloadEvent(color_ostream& out){};
+static void manageUnloadEvent(color_ostream&){};
 static void manageInteractionEvent(color_ostream& out);
 
 typedef void (*eventManager_t)(color_ostream&);
@@ -394,12 +394,6 @@ static void manageJobInitiatedEvent(color_ostream& out) {
     lastJobId = *df::global::job_next_id - 1;
 }
 
-//helper function for manageJobCompletedEvent
-static int32_t getWorkerID(df::job* job) {
-    auto ref = findRef(job->general_refs, general_ref_type::UNIT_WORKER);
-    return ref ? ref->getID() : -1;
-}
-
 /*
 TODO: consider checking item creation / experience gain just in case
 */
@@ -416,68 +410,6 @@ static void manageJobCompletedEvent(color_ostream& out) {
             continue;
         nowJobs[link->item->id] = link->item;
     }
-
-#if 0
-    //testing info on job initiation/completion
-    //newly allocated jobs
-    for ( auto j = nowJobs.begin(); j != nowJobs.end(); j++ ) {
-        if ( prevJobs.find((*j).first) != prevJobs.end() )
-            continue;
-
-        df::job& job1 = *(*j).second;
-        out.print("new job\n"
-            "  location         : 0x%X\n"
-            "  id               : %d\n"
-            "  type             : %d %s\n"
-            "  working          : %d\n"
-            "  completion_timer : %d\n"
-            "  workerID         : %d\n"
-            "  time             : %d -> %d\n"
-            "\n", job1.list_link->item, job1.id, job1.job_type, ENUM_ATTR(job_type, caption, job1.job_type), job1.flags.bits.working, job1.completion_timer, getWorkerID(&job1), tick0, tick1);
-    }
-    for ( auto i = prevJobs.begin(); i != prevJobs.end(); i++ ) {
-        df::job& job0 = *(*i).second;
-        auto j = nowJobs.find((*i).first);
-        if ( j == nowJobs.end() ) {
-            out.print("job deallocated\n"
-                "  location         : 0x%X\n"
-                "  id               : %d\n"
-                "  type             : %d %s\n"
-                "  working          : %d\n"
-                "  completion_timer : %d\n"
-                "  workerID         : %d\n"
-                "  time             : %d -> %d\n"
-                ,job0.list_link == NULL ? 0 : job0.list_link->item, job0.id, job0.job_type, ENUM_ATTR(job_type, caption, job0.job_type), job0.flags.bits.working, job0.completion_timer, getWorkerID(&job0), tick0, tick1);
-            continue;
-        }
-        df::job& job1 = *(*j).second;
-
-        if ( job0.flags.bits.working == job1.flags.bits.working &&
-               (job0.completion_timer == job1.completion_timer || (job1.completion_timer > 0 && job0.completion_timer-1 == job1.completion_timer)) &&
-               getWorkerID(&job0) == getWorkerID(&job1) )
-            continue;
-
-        out.print("job change\n"
-            "  location         : 0x%X -> 0x%X\n"
-            "  id               : %d -> %d\n"
-            "  type             : %d -> %d\n"
-            "  type             : %s -> %s\n"
-            "  working          : %d -> %d\n"
-            "  completion timer : %d -> %d\n"
-            "  workerID         : %d -> %d\n"
-            "  time             : %d -> %d\n"
-            "\n",
-            job0.list_link->item, job1.list_link->item,
-            job0.id, job1.id,
-            job0.job_type, job1.job_type,
-            ENUM_ATTR(job_type, caption, job0.job_type), ENUM_ATTR(job_type, caption, job1.job_type),
-            job0.flags.bits.working, job1.flags.bits.working,
-            job0.completion_timer, job1.completion_timer,
-            getWorkerID(&job0), getWorkerID(&job1),
-            tick0, tick1
-        );
-    }
-#endif
 
     for ( auto i = prevJobs.begin(); i != prevJobs.end(); i++ ) {
         //if it happened within a tick, must have been cancelled by the user or a plugin: not completed
@@ -1150,7 +1082,6 @@ static void manageInteractionEvent(color_ostream& out) {
 
     df::report* lastAttackEvent = NULL;
     df::unit* lastAttacker = NULL;
-    df::unit* lastDefender = NULL;
     unordered_map<int32_t,unordered_set<int32_t> > history;
     for ( ; a < reports.size(); a++ ) {
         df::report* report = reports[a];
@@ -1164,7 +1095,6 @@ static void manageInteractionEvent(color_ostream& out) {
         if ( attack ) {
             lastAttackEvent = report;
             lastAttacker = NULL;
-            lastDefender = NULL;
         }
         vector<df::unit*> relevantUnits = gatherRelevantUnits(out, lastAttackEvent, report);
         InteractionData data = getAttacker(out, lastAttackEvent, lastAttacker, attack ? NULL : report, relevantUnits);
@@ -1201,7 +1131,6 @@ static void manageInteractionEvent(color_ostream& out) {
         }
 //out.print("%s,%d\n",__FILE__,__LINE__);
         lastAttacker = df::unit::find(data.attacker);
-        lastDefender = df::unit::find(data.defender);
         //fire event
         for ( auto b = copy.begin(); b != copy.end(); b++ ) {
             EventHandler handle = (*b).second;

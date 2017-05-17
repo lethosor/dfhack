@@ -235,7 +235,7 @@ public:
             return index_tile<df::tiletype>(tiles->raw_tiles,p);
         return index_tile<df::tiletype>(block->tiletype,p);
     }
-    bool setTiletypeAt(df::coord2d, df::tiletype tt, bool force = false);
+    bool setTiletypeAt(df::coord2d, df::tiletype tt);
 
     uint16_t temperature1At(df::coord2d p)
     {
@@ -407,7 +407,7 @@ private:
     void ParseTiles(TileInfo *tiles);
     void WriteTiles(TileInfo*);
     void ParseBasemats(TileInfo *tiles, BasematInfo *bmats);
-    void WriteVeins(TileInfo *tiles, BasematInfo *bmats);
+    void WriteVeins(BasematInfo *bmats);
 
     designations40d designation;
     occupancies40d occupancy;
@@ -497,10 +497,10 @@ class DFHACK_EXPORT MapCache
         Block *b = BlockAtTile(tilecoord);
         return b ? b->tiletypeAt(tilecoord) : tiletype::Void;
     }
-    bool setTiletypeAt (DFCoord tilecoord, df::tiletype tt, bool force = false)
+    bool setTiletypeAt (DFCoord tilecoord, df::tiletype tt)
     {
         Block *b = BlockAtTile(tilecoord);
-        return b && b->setTiletypeAt(tilecoord, tt, force);
+        return b && b->setTiletypeAt(tilecoord, tt);
     }
 
     uint16_t temperature1At (DFCoord tilecoord)

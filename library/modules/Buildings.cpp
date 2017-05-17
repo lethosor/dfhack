@@ -117,7 +117,7 @@ static uint8_t *getExtentTile(df::building_extents &extent, df::coord2d tile)
  */
 bool buildings_do_onupdate = false;
 
-void buildings_onStateChange(color_ostream &out, state_change_event event)
+void buildings_onStateChange(color_ostream&, state_change_event event)
 {
     switch (event) {
     case SC_MAP_LOADED:
@@ -131,7 +131,7 @@ void buildings_onStateChange(color_ostream &out, state_change_event event)
     }
 }
 
-void buildings_onUpdate(color_ostream &out)
+void buildings_onUpdate(color_ostream&)
 {
     buildings_do_onupdate = false;
 
@@ -169,7 +169,6 @@ uint32_t Buildings::getNumBuildings()
 
 bool Buildings::Read (const uint32_t index, t_building & building)
 {
-    Core & c = Core::getInstance();
     df::building *bld = world->buildings.all[index];
 
     building.x1 = bld->x1;
@@ -189,10 +188,9 @@ bool Buildings::Read (const uint32_t index, t_building & building)
 bool Buildings::ReadCustomWorkshopTypes(map <uint32_t, string> & btypes)
 {
     vector <building_def *> & bld_def = world->raws.buildings.all;
-    uint32_t size = bld_def.size();
     btypes.clear();
 
-    for (auto iter = bld_def.begin(); iter != bld_def.end();iter++)
+    for (auto iter = bld_def.begin(); iter != bld_def.end(); iter++)
     {
         building_def * temp = *iter;
         btypes[temp->id] = temp->code;
@@ -1174,13 +1172,13 @@ bool Buildings::deconstruct(df::building *bld)
 static unordered_map<int32_t, df::coord> corner1;
 static unordered_map<int32_t, df::coord> corner2;
 
-void Buildings::clearBuildings(color_ostream& out) {
+void Buildings::clearBuildings(color_ostream&) {
     corner1.clear();
     corner2.clear();
     locationToBuilding.clear();
 }
 
-void Buildings::updateBuildings(color_ostream& out, void* ptr)
+void Buildings::updateBuildings(color_ostream&, void* ptr)
 {
     int32_t id = *((int32_t*)ptr);
     auto building = df::building::find(id);

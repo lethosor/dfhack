@@ -50,8 +50,6 @@ using namespace DFHack;
 
 Process::Process(VersionInfoFactory * known_versions)
 {
-    int target_result;
-
     char path[1024];
     char *real_path;
     uint32_t size = sizeof(path);
@@ -209,7 +207,7 @@ void Process::getMemRanges( vector<t_memrange> & ranges )
             {
                 fprintf(stderr,
                 "%p-%p %8uK %c%c%c/%c%c%c %11s %6s %10s uwir=%hu sub=%u dlname: %s\n",
-                            address, (address + vmsize), (vmsize >> 10),
+                            (void*)address, (void*)(address + vmsize), (unsigned)(vmsize >> 10),
                             (info.protection & VM_PROT_READ)        ? 'r' : '-',
                             (info.protection & VM_PROT_WRITE)       ? 'w' : '-',
                             (info.protection & VM_PROT_EXECUTE)     ? 'x' : '-',
@@ -250,22 +248,6 @@ int Process::adjustOffset(int offset, bool /*to_file*/)
     return offset;
 }
 
-static int getdir (string dir, vector<string> &files)
-{
-    DIR *dp;
-    struct dirent *dirp;
-    if((dp  = opendir(dir.c_str())) == NULL)
-    {
-        cout << "Error(" << errno << ") opening " << dir << endl;
-        return errno;
-    }
-    while ((dirp = readdir(dp)) != NULL) {
-    files.push_back(string(dirp->d_name));
-    }
-    closedir(dp);
-    return 0;
-}
-
 uint32_t Process::getTickCount()
 {
     struct timeval tp;
@@ -279,7 +261,7 @@ string Process::getPath()
     if (cached_path.size())
         return cached_path;
     char path[1024];
-    char *real_path;
+    const char *real_path = "";
     uint32_t size = sizeof(path);
     if (getcwd(path, size))
     {

@@ -246,8 +246,7 @@ namespace DFHack
             if(rawmode)
             {
                 const char * clr = "\033c\033[3J\033[H";
-                if (::write(STDIN_FILENO,clr,strlen(clr)) == -1)
-                    ;
+                if (::write(STDIN_FILENO,clr,strlen(clr)) == -1) {}
             }
             else
             {
@@ -271,8 +270,7 @@ namespace DFHack
             {
                 const char * colstr = getANSIColor(index);
                 int lstr = strlen(colstr);
-                if (::write(STDIN_FILENO,colstr,lstr) == -1)
-                    ;
+                if (::write(STDIN_FILENO,colstr,lstr) == -1) {}
             }
         }
         /// Reset color to default
@@ -457,7 +455,6 @@ namespace DFHack
             while(1)
             {
                 unsigned char c;
-                int isok;
                 unsigned char seq[2], seq2;
                 lock->unlock();
                 if(!read_char(c))
@@ -532,7 +529,7 @@ namespace DFHack
                         }
                         if (seq[1] == 'D')
                         {
-                            left_arrow:
+                            /* left_arrow */
                             if (raw_cursor > 0)
                             {
                                 raw_cursor--;
@@ -541,7 +538,6 @@ namespace DFHack
                         }
                         else if ( seq[1] == 'C')
                         {
-                            right_arrow:
                             /* right arrow */
                             if (size_t(raw_cursor) != raw_buffer.size())
                             {
@@ -636,7 +632,7 @@ namespace DFHack
                     prompt_refresh();
                     break;
                 case 11: // Ctrl+k, delete from current to end of line.
-                    if (raw_cursor < raw_buffer.size())
+                    if (raw_cursor < int(raw_buffer.size()))
                         yank_buffer = raw_buffer.substr(raw_cursor);
                     raw_buffer.erase(raw_cursor);
                     prompt_refresh();
@@ -652,7 +648,7 @@ namespace DFHack
                 case 20: // Ctrl+t, transpose current and previous characters
                     if (raw_buffer.size() >= 2 && raw_cursor > 0)
                     {
-                        if (raw_cursor == raw_buffer.size())
+                        if (raw_cursor == int(raw_buffer.size()))
                             raw_cursor--;
                         std::swap(raw_buffer[raw_cursor - 1], raw_buffer[raw_cursor]);
                         raw_cursor++;
@@ -746,8 +742,7 @@ bool Console::init(bool sharing)
         inited = false;
         return false;
     }
-    if (!freopen("stdout.log", "w", stdout))
-        ;
+    if (!freopen("stdout.log", "w", stdout)) {}
     d = new Private();
     // make our own weird streams so our IO isn't redirected
     d->dfout_C = fopen("/dev/tty", "w");
@@ -755,8 +750,7 @@ bool Console::init(bool sharing)
     clear();
     d->supported_terminal = !isUnsupportedTerm() &&  isatty(STDIN_FILENO);
     // init the exit mechanism
-    if (pipe(d->exit_pipe) == -1)
-        ;
+    if (pipe(d->exit_pipe) == -1) {}
     FD_ZERO(&d->descriptor_set);
     FD_SET(STDIN_FILENO, &d->descriptor_set);
     FD_SET(d->exit_pipe[0], &d->descriptor_set);

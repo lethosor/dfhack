@@ -254,7 +254,7 @@ bool MapExtras::Block::setFlagAt(df::coord2d p, df::tile_occupancy::Mask mask, b
     return true;
 }
 
-bool MapExtras::Block::setTiletypeAt(df::coord2d pos, df::tiletype tt, bool force)
+bool MapExtras::Block::setTiletypeAt(df::coord2d pos, df::tiletype tt)
 {
     if (!block)
         return false;
@@ -600,7 +600,7 @@ void MapExtras::Block::BasematInfo::set_base_mat(TileInfo *tiles, df::coord2d po
     }
 }
 
-void MapExtras::Block::WriteVeins(TileInfo *tiles, BasematInfo *bmats)
+void MapExtras::Block::WriteVeins(BasematInfo *bmats)
 {
     // Classify modified tiles into distinct buckets
     typedef std::pair<int, df::inclusion_type> t_vein_key;
@@ -707,7 +707,7 @@ bool MapExtras::Block::Write ()
         if (tiles && dirty_tiles)
             WriteTiles(tiles);
         if (basemats && dirty_veins)
-            WriteVeins(tiles, basemats);
+            WriteVeins(basemats);
 
         dirty_tiles = dirty_veins = false;
 
@@ -891,6 +891,7 @@ t_matpair MapExtras::BlockInfo::getBaseMaterial(df::tiletype tt, df::coord2d pos
     case CONSTRUCTION: // just a fallback
     case MAGMA:
     case HFS:
+    case UNDERWORLD_GATE:
         // use generic 'rock'
         break;
 

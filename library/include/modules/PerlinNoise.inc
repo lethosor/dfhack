@@ -75,7 +75,7 @@ inline void PerlinNoise<T,VSIZE,BITS,IDXT>::Impl<mask,i>::setup(
 template<class T, unsigned VSIZE, unsigned BITS, class IDXT>
 template<unsigned mask>
 inline T PerlinNoise<T,VSIZE,BITS,IDXT>::Impl<mask, -1>::eval(
-    PerlinNoise<T,VSIZE,BITS,IDXT> *self, Temp *pt, unsigned idx, T *pq
+    PerlinNoise<T,VSIZE,BITS,IDXT> *self, Temp*, unsigned idx, T *pq
 ) {
     return DotProduct<T,VSIZE-1>::eval(pq, self->gradients[idx]);
 }
