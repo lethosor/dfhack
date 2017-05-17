@@ -323,7 +323,7 @@ namespace {
     };
 }
 
-static bool init_run_script(color_ostream &out, lua_State *state, void *info)
+static bool init_run_script(color_ostream&, lua_State *state, void *info)
 {
     auto args = (ScriptArgs*)info;
     if (!lua_checkstack(state, args->pargs->size()+10))
@@ -348,7 +348,7 @@ static command_result runLuaScript(color_ostream &out, std::string name, vector<
     return ok ? CR_OK : CR_FAILURE;
 }
 
-static bool init_enable_script(color_ostream &out, lua_State *state, void *info)
+static bool init_enable_script(color_ostream&, lua_State *state, void *info)
 {
     auto args = (ScriptEnableState*)info;
     if (!lua_checkstack(state, 4))
