@@ -1,6 +1,9 @@
 PROJECT (dfapi)
 cmake_minimum_required(VERSION 2.8)
 
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wextra")
+SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall -Wextra")
+
 # prevent CMake warnings about INTERFACE_LINK_LIBRARIES vs LINK_INTERFACE_LIBRARIES
 IF(CMAKE_VERSION VERSION_GREATER "2.8.12")
     CMAKE_POLICY(SET CMP0022 OLD)
@@ -174,6 +177,15 @@ FOREACH(GROUP other a b c d e f g h i j k l m n o p q r s t u v w x y z)
     FILE(REMOVE ${STATIC_FIELDS_FILENAME}.tmp)
     LIST(APPEND STATIC_FIELDS_FILES ${STATIC_FIELDS_FILENAME})
 ENDFOREACH()
+# A few classes (like active_script_varst) have non-virtual destructors, even
+# though they should probably be virtual, but we can't do anything about that,
+# so silence the warning.
+IF(UNIX)
+    SET_PROPERTY(SOURCE ${STATIC_FIELDS_FILES}
+        APPEND_STRING PROPERTY COMPILE_FLAGS " -Wno-delete-non-virtual-dtor ")
+ELSE()
+    # TODO: disable warning with MSVC?
+ENDIF()
 LIST(APPEND MAIN_SOURCES ${STATIC_FIELDS_FILES})
 
 IF(WIN32)
@@ -258,11 +270,11 @@ ADD_CUSTOM_TARGET(generate_headers DEPENDS ${dfapi_SOURCE_DIR}/include/df/codege
 
 IF(UNIX)
   # Don't produce debug info for generated stubs
-  SET_SOURCE_FILES_PROPERTIES(DataStatics.cpp DataStaticsCtor.cpp DataStaticsFields.cpp ${STATIC_FIELDS_FILES}
-                              PROPERTIES COMPILE_FLAGS "-g0 -O1")
+  SET_PROPERTY(SOURCE DataStatics.cpp DataStaticsCtor.cpp DataStaticsFields.cpp ${STATIC_FIELDS_FILES}
+                APPEND_STRING PROPERTY COMPILE_FLAGS " -g0 -O1 ")
 ELSE(WIN32)
-  SET_SOURCE_FILES_PROPERTIES(DataStatics.cpp DataStaticsCtor.cpp DataStaticsFields.cpp ${STATIC_FIELDS_FILES}
-                              PROPERTIES COMPILE_FLAGS "/O1 /bigobj")
+  SET_PROPERTY(SOURCE DataStatics.cpp DataStaticsCtor.cpp DataStaticsFields.cpp ${STATIC_FIELDS_FILES}
+                APPEND_STRING PROPERTY COMPILE_FLAGS " /O1 /bigobj ")
 ENDIF()
 
 # Compilation

@@ -1084,7 +1084,7 @@ static int meta_isnull(lua_State *state)
     return 1;
 }
 
-static int meta_nodata(lua_State *state)
+static int meta_nodata(lua_State * /*state*/)
 {
     return 0;
 }

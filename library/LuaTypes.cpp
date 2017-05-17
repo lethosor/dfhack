@@ -63,17 +63,17 @@ size_t strnlen (const char *str, size_t max)
  * Identity object read/write methods *
  **************************************/
 
-void function_identity_base::lua_read(lua_State *state, int fname_idx, void *ptr)
+void function_identity_base::lua_read(lua_State *state, int fname_idx, void * /*ptr*/)
 {
     field_error(state, fname_idx, "executable code", "read");
 }
 
-void function_identity_base::lua_write(lua_State *state, int fname_idx, void *ptr, int val_index)
+void function_identity_base::lua_write(lua_State *state, int fname_idx, void * /*ptr*/, int /*val_index*/)
 {
     field_error(state, fname_idx, "executable code", "write");
 }
 
-void constructed_identity::lua_read(lua_State *state, int fname_idx, void *ptr)
+void constructed_identity::lua_read(lua_State *state, int /*fname_idx*/, void *ptr)
 {
     push_object_internal(state, this, ptr);
 }
@@ -115,7 +115,7 @@ void enum_identity::lua_write(lua_State *state, int fname_idx, void *ptr, int va
     base_type->lua_write(state, fname_idx, ptr, val_index);
 }
 
-void df::integer_identity_base::lua_read(lua_State *state, int fname_idx, void *ptr)
+void df::integer_identity_base::lua_read(lua_State *state, int /*fname_idx*/, void *ptr)
 {
     lua_pushinteger(state, read(ptr));
 }
@@ -129,7 +129,7 @@ void df::integer_identity_base::lua_write(lua_State *state, int fname_idx, void 
     write(ptr, value);
 }
 
-void df::float_identity_base::lua_read(lua_State *state, int fname_idx, void *ptr)
+void df::float_identity_base::lua_read(lua_State *state, int /*fname_idx*/, void *ptr)
 {
     lua_pushnumber(state, read(ptr));
 }
@@ -142,7 +142,7 @@ void df::float_identity_base::lua_write(lua_State *state, int fname_idx, void *p
     write(ptr, lua_tonumber(state, val_index));
 }
 
-void df::bool_identity::lua_read(lua_State *state, int fname_idx, void *ptr)
+void df::bool_identity::lua_read(lua_State *state, int /*fname_idx*/, void *ptr)
 {
     lua_pushboolean(state, *(bool*)ptr);
 }
@@ -159,7 +159,7 @@ void df::bool_identity::lua_write(lua_State *state, int fname_idx, void *ptr, in
         field_error(state, fname_idx, "boolean or number expected", "write");
 }
 
-void df::ptr_string_identity::lua_read(lua_State *state, int fname_idx, void *ptr)
+void df::ptr_string_identity::lua_read(lua_State *state, int /*fname_idx*/, void *ptr)
 {
     auto pstr = (char**)ptr;
     if (*pstr)
@@ -168,12 +168,12 @@ void df::ptr_string_identity::lua_read(lua_State *state, int fname_idx, void *pt
         lua_pushnil(state);
 }
 
-void df::ptr_string_identity::lua_write(lua_State *state, int fname_idx, void *ptr, int val_index)
+void df::ptr_string_identity::lua_write(lua_State *state, int fname_idx, void * /*ptr*/, int /*val_index*/)
 {
     field_error(state, fname_idx, "raw pointer string", "write");
 }
 
-void df::stl_string_identity::lua_read(lua_State *state, int fname_idx, void *ptr)
+void df::stl_string_identity::lua_read(lua_State *state, int /*fname_idx*/, void *ptr)
 {
     auto pstr = (std::string*)ptr;
     lua_pushlstring(state, pstr->data(), pstr->size());
@@ -189,7 +189,7 @@ void df::stl_string_identity::lua_write(lua_State *state, int fname_idx, void *p
     *(std::string*)ptr = std::string(bytes, size);
 }
 
-void df::pointer_identity::lua_read(lua_State *state, int fname_idx, void *ptr, type_identity *target)
+void df::pointer_identity::lua_read(lua_State *state, int /*fname_idx*/, void *ptr, type_identity *target)
 {
     push_object_internal(state, target, *(void**)ptr);
 }
@@ -295,7 +295,7 @@ int container_identity::lua_item_count(lua_State *state, void *ptr, CountMode mo
         return item_count(ptr, mode);
 }
 
-void container_identity::lua_item_reference(lua_State *state, int fname_idx, void *ptr, int idx)
+void container_identity::lua_item_reference(lua_State *state, int /*fname_idx*/, void *ptr, int idx)
 {
     auto id = (type_identity*)lua_touserdata(state, UPVAL_ITEM_ID);
     void *pitem = item_pointer(id, ptr, idx);
@@ -344,7 +344,7 @@ bool container_identity::lua_insert2(lua_State *state, int fname_idx, void *ptr,
     return insert(ptr, idx, pitem);
 }
 
-void ptr_container_identity::lua_item_reference(lua_State *state, int fname_idx, void *ptr, int idx)
+void ptr_container_identity::lua_item_reference(lua_State *state, int /*fname_idx*/, void *ptr, int idx)
 {
     auto id = (type_identity*)lua_touserdata(state, UPVAL_ITEM_ID);
     void *pitem = item_pointer(id, ptr, idx);
@@ -380,7 +380,7 @@ void bit_container_identity::lua_item_reference(lua_State *state, int, void *, i
     lua_pushnil(state);
 }
 
-void bit_container_identity::lua_item_read(lua_State *state, int fname_idx, void *ptr, int idx)
+void bit_container_identity::lua_item_read(lua_State *state, int /*fname_idx*/, void *ptr, int idx)
 {
     lua_pushboolean(state, get_item(ptr, idx));
 }

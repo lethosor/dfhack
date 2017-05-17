@@ -128,9 +128,18 @@ namespace DFHack
 
         virtual bool is_readonly() { return false; }
 
-        virtual bool resize(void *ptr, int size) { return false; }
-        virtual bool erase(void *ptr, int index) { return false; }
-        virtual bool insert(void *ptr, int index, void *pitem) { return false; }
+        virtual bool resize(void *ptr, int size) {
+            (void)ptr; (void)size;
+            return false;
+        }
+        virtual bool erase(void *ptr, int index) {
+            (void)ptr; (void)index;
+            return false;
+        }
+        virtual bool insert(void *ptr, int index, void *pitem) {
+            (void)ptr; (void)index; (void)pitem;
+            return false;
+        }
 
         virtual bool lua_insert2(lua_State *state, int fname_idx, void *ptr, int idx, int val_index);
 
@@ -350,7 +359,7 @@ namespace df
         static buffer_container_identity base_instance;
 
     protected:
-        virtual int item_count(void *ptr, CountMode) { return size; }
+        virtual int item_count(void *, CountMode) { return size; }
         virtual void *item_pointer(type_identity *item, void *ptr, int idx) {
             return ((uint8_t*)ptr) + idx * item->byte_size();
         }
@@ -386,7 +395,7 @@ namespace df
 
     protected:
         virtual int item_count(void *ptr, CountMode) { return (int)((T*)ptr)->size(); }
-        virtual void *item_pointer(type_identity *item, void *ptr, int idx) {
+        virtual void *item_pointer(type_identity *, void *ptr, int idx) {
             return &(*(T*)ptr)[idx];
         }
     };
@@ -405,13 +414,13 @@ namespace df
         }
 
         virtual bool is_readonly() { return true; }
-        virtual bool resize(void *ptr, int size) { return false; }
-        virtual bool erase(void *ptr, int size) { return false; }
-        virtual bool insert(void *ptr, int idx, void *item) { return false; }
+        virtual bool resize(void*, int) { return false; }
+        virtual bool erase(void*, int) { return false; }
+        virtual bool insert(void*, int, void*) { return false; }
 
     protected:
         virtual int item_count(void *ptr, CountMode) { return (int)((T*)ptr)->size(); }
-        virtual void *item_pointer(type_identity *item, void *ptr, int idx) {
+        virtual void *item_pointer(type_identity *, void *ptr, int idx) {
             auto iter = (*(T*)ptr).begin();
             for (; idx > 0; idx--) ++iter;
             return (void*)&*iter;
@@ -431,7 +440,7 @@ namespace df
             : bit_container_identity(sizeof(container), &allocator_fn<container>, ienum)
         {}
 
-        std::string getFullName(type_identity *item) {
+        std::string getFullName(type_identity *) {
             return "BitArray<>";
         }
 
@@ -500,7 +509,7 @@ namespace df
         virtual int item_count(void *ptr, CountMode cm) {
             return cm == COUNT_WRITE ? 0 : (int)((container*)ptr)->size;
         }
-        virtual void *item_pointer(type_identity *item, void *ptr, int idx) {
+        virtual void *item_pointer(type_identity *, void *ptr, int idx) {
             return (void*)&((container*)ptr)->items[idx];
         }
     };

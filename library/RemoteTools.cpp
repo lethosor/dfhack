@@ -358,21 +358,21 @@ void DFHack::describeUnit(BasicUnitInfo *info, df::unit *unit,
         info->add_burrows(unit->burrows[i]);
 }
 
-static command_result GetVersion(color_ostream &stream,
+static command_result GetVersion(color_ostream&,
                                  const EmptyMessage *, StringMessage *out)
 {
     out->set_value(Version::dfhack_version());
     return CR_OK;
 }
 
-static command_result GetDFVersion(color_ostream &stream,
+static command_result GetDFVersion(color_ostream&,
                                    const EmptyMessage *, StringMessage *out)
 {
     out->set_value(Core::getInstance().vinfo->getVersion());
     return CR_OK;
 }
 
-static command_result GetWorldInfo(color_ostream &stream,
+static command_result GetWorldInfo(color_ostream&,
                                    const EmptyMessage *, GetWorldInfoOut *out)
 {
     using df::global::ui;
@@ -437,7 +437,7 @@ static command_result GetWorldInfo(color_ostream &stream,
     return CR_OK;
 }
 
-static command_result ListEnums(color_ostream &stream,
+static command_result ListEnums(color_ostream&,
                                 const EmptyMessage *, ListEnumsOut *out)
 {
 #define ENUM(name) describe_enum<df::name>(out->mutable_##name());
@@ -465,7 +465,7 @@ static command_result ListEnums(color_ostream &stream,
 #undef BITFIELD
 }
 
-static command_result ListJobSkills(color_ostream &stream, const EmptyMessage *, ListJobSkillsOut *out)
+static command_result ListJobSkills(color_ostream&, const EmptyMessage *, ListJobSkillsOut *out)
 {
     auto pf_skill = out->mutable_skill();
     FOR_ENUM_ITEMS(job_skill, skill)
@@ -514,7 +514,7 @@ static void listMaterial(ListMaterialsOut *out, int type, int index, const Basic
         describeMaterial(out->add_value(), info, mask);
 }
 
-static command_result ListMaterials(color_ostream &stream,
+static command_result ListMaterials(color_ostream&,
                                     const ListMaterialsIn *in, ListMaterialsOut *out)
 {
     auto mask = in->has_mask() ? &in->mask() : NULL;
@@ -565,7 +565,7 @@ static command_result ListMaterials(color_ostream &stream,
     return out->value_size() ? CR_OK : CR_NOT_FOUND;
 }
 
-static command_result ListUnits(color_ostream &stream,
+static command_result ListUnits(color_ostream&,
                                 const ListUnitsIn *in, ListUnitsOut *out)
 {
     auto mask = in->has_mask() ? &in->mask() : NULL;
@@ -606,8 +606,8 @@ static command_result ListUnits(color_ostream &stream,
     return out->value_size() ? CR_OK : CR_NOT_FOUND;
 }
 
-static command_result ListSquads(color_ostream &stream,
-                                 const ListSquadsIn *in, ListSquadsOut *out)
+static command_result ListSquads(color_ostream&,
+                                 const ListSquadsIn*, ListSquadsOut *out)
 {
     auto entity = df::historical_entity::find(df::global::ui->group_id);
     if (!entity)
@@ -634,7 +634,7 @@ static command_result ListSquads(color_ostream &stream,
     return CR_OK;
 }
 
-static command_result SetUnitLabors(color_ostream &stream, const SetUnitLaborsIn *in)
+static command_result SetUnitLabors(color_ostream&, const SetUnitLaborsIn *in)
 {
     for (int i = 0; i < in->change_size(); i++)
     {
@@ -719,14 +719,14 @@ command_result CoreService::RunCommand(color_ostream &stream,
     return Core::getInstance().runCommand(stream, cmd, args);
 }
 
-command_result CoreService::CoreSuspend(color_ostream &stream, const EmptyMessage*, IntMessage *cnt)
+command_result CoreService::CoreSuspend(color_ostream&, const EmptyMessage*, IntMessage *cnt)
 {
     Core::getInstance().Suspend();
     cnt->set_value(++suspend_depth);
     return CR_OK;
 }
 
-command_result CoreService::CoreResume(color_ostream &stream, const EmptyMessage*, IntMessage *cnt)
+command_result CoreService::CoreResume(color_ostream&, const EmptyMessage*, IntMessage *cnt)
 {
     if (suspend_depth <= 0)
         return CR_WRONG_USAGE;

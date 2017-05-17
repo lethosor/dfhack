@@ -182,8 +182,7 @@ struct Plugin::LuaEvent : public Lua::Event::Owner {
     }
 };
 
-Plugin::Plugin(Core * core, const std::string & path,
-    const std::string &name, PluginManager * pm)
+Plugin::Plugin(const std::string &path, const std::string &name, PluginManager *pm)
     :path(path),
      name(name),
      parent(pm)
@@ -812,7 +811,7 @@ bool PluginManager::addPlugin(string name)
         Core::printerr("Plugin does not exist: %s\n", name.c_str());
         return false;
     }
-    Plugin * p = new Plugin(core, path, name, this);
+    Plugin * p = new Plugin(path, name, this);
     all_plugins[name] = p;
     return true;
 }

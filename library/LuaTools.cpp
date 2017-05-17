@@ -78,6 +78,7 @@ inline bool is_null_userdata(lua_State *L, int idx)
 
 inline void AssertCoreSuspend(lua_State *state)
 {
+    (void)state;
     assert(!Lua::IsCoreContext(state) || DFHack::Core::getInstance().isSuspended());
 }
 
@@ -364,7 +365,7 @@ static void interrupt_init (lua_State *L)
     lua_sethook(L, interrupt_hook, LUA_MASKCOUNT, 256);
 }
 
-static void interrupt_hook (lua_State *L, lua_Debug *ar)
+static void interrupt_hook (lua_State *L, lua_Debug*)
 {
     if (lstop)
     {
@@ -1091,7 +1092,7 @@ namespace {
     };
 }
 
-static bool init_interpreter(color_ostream &out, lua_State *state, void *info)
+static bool init_interpreter(color_ostream&, lua_State *state, void *info)
 {
     auto args = (InterpreterArgs*)info;
     lua_rawgetp(state, LUA_REGISTRYINDEX, &DFHACK_DFHACK_TOKEN);

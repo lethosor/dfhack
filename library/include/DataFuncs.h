@@ -93,11 +93,11 @@ namespace df {
 #define INSTANTIATE_WRAPPERS2(Count, FArgs, Args, Loads) \
     template<FW_TARGS> struct function_wrapper<void (*) FArgs, true> { \
         static const int num_args = Count; \
-        static void execute(lua_State *state, int base, void (*cb) FArgs) { Loads; INVOKE_VOID(cb Args); } \
+        static void execute(lua_State *state, int base, void (*cb) FArgs) { (void)base; Loads; INVOKE_VOID(cb Args); } \
     }; \
     template<FW_TARGSC class RT> struct function_wrapper<RT (*) FArgs, false> { \
         static const int num_args = Count; \
-        static void execute(lua_State *state, int base, RT (*cb) FArgs) { Loads; INVOKE_RV(cb Args); } \
+        static void execute(lua_State *state, int base, RT (*cb) FArgs) { (void)base; Loads; INVOKE_RV(cb Args); } \
     }; \
     template<FW_TARGSC class CT> struct function_wrapper<void (CT::*) FArgs, true> { \
         static const int num_args = Count+1; \

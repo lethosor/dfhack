@@ -140,8 +140,7 @@ namespace DFHack
         struct RefAutoinc;
         friend class PluginManager;
         friend class RPCService;
-        Plugin(DFHack::Core* core, const std::string& filepath,
-            const std::string &plug_name, PluginManager * pm);
+        Plugin(const std::string &path, const std::string &name, PluginManager *pm);
         ~Plugin();
         command_result on_update(color_ostream &out);
         command_result on_state_change(color_ostream &out, state_change_event event);
