@@ -10,13 +10,14 @@ addons:
       - zlib1g-dev:i386
 matrix:
   include:
-    - env: GCC_VERSION=4.8
+    - env: GCC_VERSION=4.8 ARCH=32
       addons:
         apt:
           packages:
             - *default_packages
             - gcc-4.8-multilib
             - g++-4.8-multilib
+    - env: GCC_VERSION=4.8 ARCH=64
 before_install:
   pip install --user "sphinx==1.4" "requests[security]"
 script:
@@ -31,7 +32,7 @@ script:
 - python travis/script-syntax.py --ext=rb --cmd="ruby -c"
 - mkdir build-travis
 - cd build-travis
-- cmake .. -DCMAKE_C_COMPILER=gcc-$GCC_VERSION -DCMAKE_CXX_COMPILER=g++-$GCC_VERSION -DBUILD_DOCS:BOOL=ON
+- cmake .. -DDFHACK_BUILD_ARCH=64 -DCMAKE_C_COMPILER=gcc-$GCC_VERSION -DCMAKE_CXX_COMPILER=g++-$GCC_VERSION -DBUILD_DOCS:BOOL=ON
 - make -j3
 notifications:
   email: false
