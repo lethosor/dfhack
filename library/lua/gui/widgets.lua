@@ -400,6 +400,140 @@ function Label:onInput(keys)
     end
 end
 
+--------------
+-- KeyLabel --
+--------------
+
+KeyLabel = defclass(KeyLabel, Label)
+KeyLabel.ATTRS{
+    key = DEFAULT_NIL,
+    key_pen = COLOR_LIGHTGREEN,
+    key_sep = ': ',
+    on_activate = DEFAULT_NIL,
+    allow_click = true,
+    auto_width = true,  -- override Label
+}
+
+function KeyLabel:init(args)
+    if self.allow_click then
+        self.on_click = self.on_activate
+    end
+    self:setText(args.text)
+end
+
+function KeyLabel:setText(text)
+    if type(text) == 'table' then
+        text = copyall(text)
+    else
+        text = {text}
+    end
+    table.insert(text, 1, {
+        key = self.key,
+        key_sep = self.key_sep,
+        key_pen = self.key_pen,
+        on_activate = self.on_activate,
+    })
+    Label.setText(self, text)
+end
+
+---------------------
+-- MultiStateLabel --
+---------------------
+
+MultiStateLabel = defclass(MultiStateLabel, KeyLabel)
+MultiStateLabel.ATTRS{
+    state_sep = ': ',
+    state_pen = COLOR_GREEN,
+    states = {},
+    on_change = DEFAULT_NIL,
+}
+
+function MultiStateLabel:init(args)
+    self.on_activate = self:callback('nextOption')
+    KeyLabel.init(self, args)
+
+    self:resetState()
+    self.base_text = args.text
+    self:setText(self.base_text)
+end
+
+function MultiStateLabel:resetState()
+    self.cur_state = 1
+end
+
+function MultiStateLabel:setState(state)
+    self.cur_state = state
+    if self.cur_state > #self.states then
+        self.cur_state = 1
+    end
+end
+
+function MultiStateLabel:setText(text)
+    if type(text) == 'table' then
+        text = copyall(text)
+    else
+        text = {text}
+    end
+
+    table.insert(text, {
+        text = self.key_sep,
+    })
+    table.insert(text, self.states[self.cur_state])
+
+    KeyLabel.setText(self, text)
+end
+
+function MultiStateLabel:nextOption()
+    self:setState(self.cur_state + 1)
+    self:setText(self.base_text)
+    self:triggerChange()
+end
+
+function MultiStateLabel:triggerChange()
+    self.on_change(self.cur_state, self.states[self.cur_state])
+end
+
+-----------------
+-- ToggleLabel --
+-----------------
+
+ToggleLabel = defclass(ToggleLabel, MultiStateLabel)
+ToggleLabel.ATTRS{
+    yes_text = 'Yes',
+    yes_pen = COLOR_GREEN,
+    no_text = 'No',
+    no_pen = COLOR_RED,
+    allow_off = false,
+    off_text = 'Off',
+    off_pen = COLOR_DARKGREY,
+    default = DEFAULT_NIL, -- true|false|nil
+}
+
+function ToggleLabel:init(args)
+    self.states = {
+        {text = self.yes_text, pen = self.yes_pen},
+        {text = self.no_text, pen = self.no_pen},
+    }
+    if self.allow_off then
+        table.insert(self.states, {text = self.off_text, pen = self.off_pen})
+    end
+
+    MultiStateLabel.init(self, args)
+end
+
+function ToggleLabel:resetState()
+    if self.default == nil and self.allow_off then
+        self.cur_state = 3
+    elseif self.default == false then
+        self.cur_state = 2
+    end
+    self:setText(self.base_text)
+end
+
+function ToggleLabel:triggerChange()
+    self.on_change(({true, false})[self.cur_state])
+end
+
 ----------
 -- List --
 ----------
