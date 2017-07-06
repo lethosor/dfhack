@@ -3,8 +3,13 @@
 #include "DataDefs.h"
 #include "Export.h"
 #include "PluginManager.h"
+#include "VersionInfo.h"
 
 #include "python/Python.h"
+
+// This plugin uses size_t for pointers, since Python offers an easy way to
+// convert PyLong objects to size_t's
+static_assert(sizeof(void*) == sizeof(size_t), "void* and size_t are not the same size");
 
 using namespace std;
 using namespace DFHack;
@@ -19,53 +24,62 @@ DFHACK_PLUGIN("python");
 
 color_ostream_proxy *py_console = 0;
 
-PyObject *dfhack_print(PyObject *self, PyObject *args) {
-    // Core::print("dfhack_print()\n");
-    const char *msg;
-    int color = -100;
-    if (!PyArg_ParseTuple(args, "z|i", &msg, &color))
-        return nullptr;
+namespace api {
+    PyObject *print(PyObject *self, PyObject *args)
+    {
+        const char *msg;
+        int color = -100;
+        if (!PyArg_ParseTuple(args, "z|i", &msg, &color))
+            return nullptr;
 
-    if (color != -100)
-        py_console->color(color_value(color));
-    py_console->print(msg);
-    if (color != -100)
-        py_console->color(COLOR_RESET);
+        if (color != -100)
+            py_console->color(color_value(color));
+        py_console->print(msg);
+        if (color != -100)
+            py_console->color(COLOR_RESET);
 
-    Py_RETURN_NONE;
-}
-
-PyObject *dfhack_printerr(PyObject *self, PyObject *args) {
-    const char *msg;
-    if (!PyArg_ParseTuple(args, "z", &msg))
-        return nullptr;
-
-    py_console->printerr(msg);
-
-    Py_RETURN_NONE;
-}
-
-PyObject *dfhack_call(PyObject *self, PyObject *args) {
-    ssize_t len = PyTuple_Size(args);
-    cout << "dfhack_call(): " << len << " arguments" << endl;
-    for (ssize_t i = 0; i < len; i++) {
-        PyObject *obj = PyTuple_GetItem(args, i);
-        PyTypeObject *type = Py_TYPE(obj);
-        cout << "  arg " << i << " = " << obj << ", type: " << type->tp_name << endl;
-        if (PyBool_Check(obj)) {
-            cout << "    as bool: "  << endl;
-        }
-        if (PyLong_Check(obj)) {
-            cout << "    as long: " << PyLong_AsLong(obj) << endl;
-        }
+        Py_RETURN_NONE;
     }
-    Py_RETURN_NONE;
+
+    PyObject *printerr(PyObject *self, PyObject *args)
+    {
+        const char *msg;
+        if (!PyArg_ParseTuple(args, "z", &msg))
+            return nullptr;
+
+        py_console->printerr(msg);
+
+        Py_RETURN_NONE;
+    }
+
+    PyObject *get_global_address(PyObject *self, PyObject *args)
+    {
+        const char *name;
+        if (!PyArg_ParseTuple(args, "z", &name))
+            return nullptr;
+
+        return PyLong_FromSize_t(size_t(Core::getInstance().vinfo->getAddress(name)));
+    }
+
+    PyObject *all_type_ids(PyObject *self, PyObject *args)
+    {
+        auto ids = compound_identity::getTopScope();
+        PyObject *dict = PyDict_New();
+        for (ssize_t i = 0; i < ssize_t(ids.size()); i++)
+            PyDict_SetItem(dict,
+                PyLong_FromSize_t(size_t(ids[i])),
+                PyUnicode_FromString(ids[i]->getName()));
+        return dict;
+    }
 }
+
+#define WRAP(name) {#name, api::name, METH_VARARGS, 0}
 
 PyMethodDef dfhack_methods[] = {
-    {"print", dfhack_print, METH_VARARGS, 0},
-    {"printerr", dfhack_printerr, METH_VARARGS, 0},
-    {"call", dfhack_call, METH_VARARGS, 0},
+    WRAP(print),
+    WRAP(printerr),
+    WRAP(get_global_address),
+    WRAP(all_type_ids),
     {0, 0, 0, 0}
 };
 
@@ -90,11 +104,6 @@ bool py_startup(color_ostream &out) {
         "./hack/python/stdlib-python.zip",
         nullptr));
     Py_Initialize();
-
-    out << PyImport_ImportModule("_dfhack") << endl;
-    out << PyImport_ImportModule("sys") << endl;
-    out << PyImport_ImportModule("math") << endl;
-    out << PyImport_ImportModule("os.path") << endl;
 
     PyRun_SimpleString("import dfhack");
 
