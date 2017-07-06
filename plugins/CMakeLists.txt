@@ -29,6 +29,11 @@ if (BUILD_RUBY)
     add_subdirectory (ruby)
 endif()
 
+OPTION(BUILD_PYTHON "Build python binding." ON)
+if (BUILD_PYTHON)
+    add_subdirectory (python)
+endif()
+
 install(DIRECTORY lua/
         DESTINATION ${DFHACK_LUA_DESTINATION}/plugins
         FILES_MATCHING PATTERN "*.lua")
