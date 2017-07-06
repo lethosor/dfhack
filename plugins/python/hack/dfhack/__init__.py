@@ -41,6 +41,7 @@ def run_script(path, *args):
         'dfhack': dfhack,
         'sys': sys,
         '__file__': path,
+        'argv': (path,) + args,
     }
 
     for k in __all__:
