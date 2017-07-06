@@ -86,8 +86,7 @@ bool py_startup(color_ostream &out) {
 
     Py_SetPath(Py_DecodeLocale(
         "./hack/python" PATHSEP
-        "./hack/python/zlib" PATHSEP
-        "./hack/python/stdlib-dynload.zip" PATHSEP
+        "./hack/python/stdlib-dynload" PATHSEP
         "./hack/python/stdlib-python.zip",
         nullptr));
     Py_Initialize();
