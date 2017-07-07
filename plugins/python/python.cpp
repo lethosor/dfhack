@@ -129,7 +129,13 @@ private:
 };
 
 namespace api {
-    PyObject *print(PyObject *self, PyObject *args)
+    map<const char*, PyObject*(*)(PyObject*, PyObject*)> functions;
+    #define API_FUNC_X(name, self, args) PyObject *name(PyObject*, PyObject*); \
+        DFHACK_STATIC_ADD_TO_MAP(&functions, #name, name); \
+        PyObject *name(PyObject *self, PyObject *args)
+    #define API_FUNC(name) API_FUNC_X(name, self, args)
+
+    API_FUNC(print)
     {
         const char *msg;
         int color = -100;
@@ -145,7 +151,7 @@ namespace api {
         Py_RETURN_NONE;
     }
 
-    PyObject *printerr(PyObject *self, PyObject *args)
+    API_FUNC(printerr)
     {
         const char *msg;
         if (!PyArg_ParseTuple(args, "z", &msg))
@@ -156,7 +162,7 @@ namespace api {
         Py_RETURN_NONE;
     }
 
-    PyObject *get_global_address(PyObject *self, PyObject *args)
+    API_FUNC(get_global_address)
     {
         const char *name;
         if (!PyArg_ParseTuple(args, "z", &name))
@@ -165,7 +171,7 @@ namespace api {
         return PyLong_FromSize_t(size_t(Core::getInstance().vinfo->getAddress(name)));
     }
 
-    PyObject *all_type_ids(PyObject *self, PyObject *args)
+    API_FUNC(all_type_ids)
     {
         if (all_identities.empty())
         {
@@ -183,7 +189,7 @@ namespace api {
         return dict;
     }
 
-    PyObject *type_name(PyObject *self, PyObject *args)
+    API_FUNC(type_name)
     {
         compound_identity *id;
         if (!PyArg_ParseTuple(args, "n", (ssize_t*)&id))
@@ -198,7 +204,7 @@ namespace api {
         }
     }
 
-    PyObject *lua_can_call(PyObject *self, PyObject *args)
+    API_FUNC(lua_can_call)
     {
         if (PyTuple_Size(args) != 1)
             return PyErr_Format(PyExc_TypeError, "%s expected 1 argument, got %i",
@@ -213,7 +219,7 @@ namespace api {
         return PyBool_FromLong(can_call);
     }
 
-    PyObject *lua_call_func(PyObject *self, PyObject *args)
+    API_FUNC(lua_call_func)
     {
         if (PyTuple_Size(args) < 1)
             return PyErr_Format(PyExc_TypeError, "%s expected at least 1 argument, got %i",
@@ -262,25 +268,26 @@ namespace api {
     }
 }
 
-#define WRAP(name) {#name, api::name, METH_VARARGS, 0}
-
-PyMethodDef dfhack_methods[] = {
-    WRAP(print),
-    WRAP(printerr),
-    WRAP(get_global_address),
-    WRAP(all_type_ids),
-    WRAP(type_name),
-    WRAP(lua_can_call),
-    WRAP(lua_call_func),
-    {0, 0, 0, 0}
-};
+PyMethodDef *dfhack_methods = nullptr;
 
 PyModuleDef dfhack_module = {
     PyModuleDef_HEAD_INIT, "_dfhack", nullptr, -1, dfhack_methods,
     0, 0, 0, 0
 };
 
-PyObject* dfhack_init() {
+PyObject* dfhack_init()
+{
+    if (!dfhack_methods)
+    {
+        dfhack_methods = new PyMethodDef[api::functions.size() + 1];
+        size_t i = 0;
+        for (auto it : api::functions)
+        {
+            dfhack_methods[i++] = {it.first, it.second, METH_VARARGS, 0};
+        }
+        dfhack_methods[i] = {0, 0, 0, 0};
+    }
+    dfhack_module.m_methods = dfhack_methods;
     return PyModule_Create(&dfhack_module);
 }
 
@@ -383,6 +390,12 @@ DFhackCExport command_result plugin_shutdown (color_ostream &out)
     }
 
     delete py_console;
+
+    if (dfhack_methods)
+    {
+        delete[] dfhack_methods;
+        dfhack_methods = nullptr;
+    }
 
     return CR_OK;
 }
