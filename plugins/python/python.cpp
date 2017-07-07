@@ -1,3 +1,5 @@
+#include <map>
+
 #include "Console.h"
 #include "Core.h"
 #include "DataDefs.h"
@@ -27,6 +29,7 @@ DFHACK_PLUGIN("python");
 #endif
 
 color_ostream_proxy *py_console = 0;
+set<compound_identity*> all_identities;
 
 namespace pylua
 {
@@ -164,13 +167,35 @@ namespace api {
 
     PyObject *all_type_ids(PyObject *self, PyObject *args)
     {
-        auto ids = compound_identity::getTopScope();
+        if (all_identities.empty())
+        {
+            auto ids = compound_identity::getTopScope();
+            for (compound_identity *id : ids)
+                all_identities.insert(id);
+        }
         PyObject *dict = PyDict_New();
-        for (ssize_t i = 0; i < ssize_t(ids.size()); i++)
+        for (auto id : all_identities)
+        {
             PyDict_SetItem(dict,
-                PyLong_FromSize_t(size_t(ids[i])),
-                PyUnicode_FromString(ids[i]->getName()));
+                PyLong_FromSize_t(size_t(id)),
+                PyUnicode_FromString(id->getName()));
+        }
         return dict;
+    }
+
+    PyObject *type_name(PyObject *self, PyObject *args)
+    {
+        compound_identity *id;
+        if (!PyArg_ParseTuple(args, "n", (ssize_t*)&id))
+            return nullptr;
+        if (all_identities.count(id))
+        {
+            return PyUnicode_FromString(id->getName());
+        }
+        else
+        {
+            return PyErr_Format(PyExc_TypeError, "unknown DF type: %p", id);
+        }
     }
 
     PyObject *lua_can_call(PyObject *self, PyObject *args)
@@ -244,6 +269,7 @@ PyMethodDef dfhack_methods[] = {
     WRAP(printerr),
     WRAP(get_global_address),
     WRAP(all_type_ids),
+    WRAP(type_name),
     WRAP(lua_can_call),
     WRAP(lua_call_func),
     {0, 0, 0, 0}

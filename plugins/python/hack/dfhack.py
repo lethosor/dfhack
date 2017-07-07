@@ -1,7 +1,6 @@
 """ Main DFHack Python module """
 
 import _dfhack
-import dfhack
 import sys
 
 __all__ = ['print', 'printerr', 'run_script']
@@ -32,6 +31,9 @@ sys.stdout = StdioWrapper(sys.stdout, _dfhack.print)
 sys.stderr = StdioWrapper(sys.stdout, _dfhack.printerr)
 
 def run_script(path, *args):
+    import df
+    import dfhack
+
     with open(path) as f:
         contents = f.read()
 
@@ -39,6 +41,7 @@ def run_script(path, *args):
 
     env = {
         'dfhack': dfhack,
+        'df': df,
         'sys': sys,
         '__file__': path,
         'argv': (path,) + args,
