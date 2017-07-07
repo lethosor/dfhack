@@ -166,7 +166,20 @@ DFhackCExport command_result plugin_init (color_ostream &out, std::vector <Plugi
 
 DFhackCExport command_result plugin_shutdown (color_ostream &out)
 {
-    Py_Finalize();
+    // PyGILState_Ensure();
+    if (Py_FinalizeEx())
+        out.printerr("Py_FinalizeEx failed\n");
+
+    // Remove _dfhack from PyImport_Inittab. Otherwise, a stale entry will be
+    // left behind, which could crash when reloading this plugin.
+    for (int i = 0; PyImport_Inittab[i].name; i++) {
+        if (string(PyImport_Inittab[i].name) == "_dfhack") {
+            PyImport_Inittab[i].name = nullptr;
+            PyImport_Inittab[i].initfunc = nullptr;
+            break;
+        }
+    }
+
     delete py_console;
 
     return CR_OK;
