@@ -38,6 +38,8 @@ namespace pylua
             lua_pushboolean(L, obj == Py_True);
         else if (PyLong_Check(obj))
             lua_pushinteger(L, PyLong_AsLongLong(obj));
+        else if (PyFloat_Check(obj))
+            lua_pushnumber(L, PyFloat_AsDouble(obj));
         else if (PyUnicode_Check(obj))
             lua_pushstring(L, PyUnicode_AsUTF8(obj));
         else
@@ -55,6 +57,8 @@ namespace pylua
             return PyBool_FromLong(long(lua_toboolean(L, idx)));
         else if (lua_isinteger(L, idx))
             return PyLong_FromLongLong(lua_tointeger(L, idx));
+        else if (lua_isnumber(L, idx))
+            return PyFloat_FromDouble(lua_tonumber(L, idx));
         else if (lua_isstring(L, idx))
             return PyUnicode_FromString(lua_tostring(L, idx));
         else
@@ -214,7 +218,9 @@ namespace api {
 
         int nres = lua_gettop(L) - int(unwind);
 
-        if (nres == 1)
+        if (nres <= 0)
+            Py_RETURN_NONE;
+        else if (nres == 1)
             return pylua::topyobject(L, -1);
         else
         {
