@@ -48,3 +48,23 @@ def run_script(path, *args):
         env[k] = globals()[k]
 
     exec(code, env)
+
+class LuaFunction:
+    def __init__(self, path):
+        self.path = path
+
+    def __call__(self, *args):
+        return _dfhack.lua_call(self.path, args)
+
+class LuaModule:
+    def __init__(self, name):
+        self.name = name
+
+    def __getattr__(self, name):
+        path = ('dfhack', self.name, name)
+        if _dfhack.lua_can_call(path):
+            return LuaFunction(path)
+        else:
+            raise AttributeError("%r module has no attribute %r" % (self.name, name))
+
+world = LuaModule("world")

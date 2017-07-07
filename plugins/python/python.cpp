@@ -7,6 +7,10 @@
 
 #include "python/Python.h"
 
+#include "lua.h"
+#include "lauxlib.h"
+#include "LuaTools.h"
+
 // This plugin uses size_t for pointers, since Python offers an easy way to
 // convert PyLong objects to size_t's
 static_assert(sizeof(void*) == sizeof(size_t), "void* and size_t are not the same size");
@@ -23,6 +27,30 @@ DFHACK_PLUGIN("python");
 #endif
 
 color_ostream_proxy *py_console = 0;
+
+bool lua_pushpyobject(lua_State *L, PyObject *obj)
+{
+    if (PyBool_Check(obj))
+        lua_pushboolean(L, obj == Py_True);
+    else if (PyLong_Check(obj))
+        lua_pushinteger(L, PyLong_AsLongLong(obj));
+    else
+        return false;
+    return true;
+}
+
+int lua_can_call_helper(lua_State *L)
+{
+    int nargs = lua_gettop(L);
+    lua_getglobal(L, luaL_checkstring(L, 1));
+    for (int i = 2; i <= nargs; i++)
+    {
+        lua_getfield(L, -1, luaL_checkstring(L, i));
+        lua_remove(L, -2);
+    }
+    luaL_checktype(L, -1, LUA_TFUNCTION);
+    return 0;
+}
 
 class PyGILLock {
 public:
@@ -79,6 +107,38 @@ namespace api {
                 PyUnicode_FromString(ids[i]->getName()));
         return dict;
     }
+
+    PyObject *lua_can_call(PyObject *self, PyObject *args)
+    {
+        if (!PyTuple_Check(PyTuple_GetItem(args, 0)))
+        {
+            PyErr_SetString(PyExc_TypeError, "path not a tuple");
+            return nullptr;
+        }
+        PyObject *path = PyTuple_GetItem(args, 0);
+        vector<const char*> vpath;
+        for (ssize_t i = 0; i < PyTuple_Size(path); i++)
+        {
+            PyObject *path_item = PyTuple_GetItem(path, i);
+            if (PyUnicode_Check(path_item))
+            {
+                vpath.push_back(PyUnicode_AsUTF8(path_item));
+            }
+            else
+            {
+                PyErr_SetString(PyExc_TypeError, "path item not unicode");
+                return nullptr;
+            }
+        }
+
+        lua_State *L = Lua::Core::State;
+        lua_pushcfunction(L, lua_can_call_helper);
+        for (auto s : vpath)
+            lua_pushstring(L, s);
+        bool can_call = (lua_pcall(L, vpath.size(), 0, 0) == LUA_OK);
+        lua_settop(L, 0);
+        return PyBool_FromLong(can_call);
+    }
 }
 
 #define WRAP(name) {#name, api::name, METH_VARARGS, 0}
@@ -88,6 +148,7 @@ PyMethodDef dfhack_methods[] = {
     WRAP(printerr),
     WRAP(get_global_address),
     WRAP(all_type_ids),
+    WRAP(lua_can_call),
     {0, 0, 0, 0}
 };
 

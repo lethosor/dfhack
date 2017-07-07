@@ -1,4 +1,4 @@
-DFHACK_PLUGIN(python python.cpp)
+DFHACK_PLUGIN(python python.cpp LINK_LIBRARIES lua)
 set(PY_VERSION 3.6.1)
 include_directories(${CMAKE_CURRENT_SOURCE_DIR}/include)
 target_link_libraries(python ${CMAKE_CURRENT_SOURCE_DIR}/lib/osx64/libpython3.6.dylib)
