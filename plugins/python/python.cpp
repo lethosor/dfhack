@@ -28,28 +28,89 @@ DFHACK_PLUGIN("python");
 
 color_ostream_proxy *py_console = 0;
 
-bool lua_pushpyobject(lua_State *L, PyObject *obj)
+namespace pylua
 {
-    if (PyBool_Check(obj))
-        lua_pushboolean(L, obj == Py_True);
-    else if (PyLong_Check(obj))
-        lua_pushinteger(L, PyLong_AsLongLong(obj));
-    else
-        return false;
-    return true;
-}
-
-int lua_can_call_helper(lua_State *L)
-{
-    int nargs = lua_gettop(L);
-    lua_getglobal(L, luaL_checkstring(L, 1));
-    for (int i = 2; i <= nargs; i++)
+    bool push(lua_State *L, PyObject *obj)
     {
-        lua_getfield(L, -1, luaL_checkstring(L, i));
-        lua_remove(L, -2);
+        if (obj == Py_None)
+            lua_pushnil(L);
+        else if (PyBool_Check(obj))
+            lua_pushboolean(L, obj == Py_True);
+        else if (PyLong_Check(obj))
+            lua_pushinteger(L, PyLong_AsLongLong(obj));
+        else if (PyUnicode_Check(obj))
+            lua_pushstring(L, PyUnicode_AsUTF8(obj));
+        else
+            return false;
+        return true;
     }
-    luaL_checktype(L, -1, LUA_TFUNCTION);
-    return 0;
+
+    PyObject *topyobject(lua_State *L, int idx)
+    {
+        if (lua_isnone(L, idx))
+            return PyErr_Format(PyExc_IndexError, "invalid lua index: %i", idx);
+        else if (lua_isnil(L, idx))
+            Py_RETURN_NONE;
+        else if (lua_isboolean(L, idx))
+            return PyBool_FromLong(long(lua_toboolean(L, idx)));
+        else if (lua_isinteger(L, idx))
+            return PyLong_FromLongLong(lua_tointeger(L, idx));
+        else if (lua_isstring(L, idx))
+            return PyUnicode_FromString(lua_tostring(L, idx));
+        else
+            return PyErr_Format(PyExc_TypeError, "cannot convert %s to Python",
+                lua_typename(L, lua_type(L, idx)));
+    }
+
+    bool call_get_path(PyObject *path, vector<const char*> &out)
+    {
+        if (!PyTuple_Check(path))
+        {
+            PyErr_SetString(PyExc_TypeError, "path not a tuple");
+            return false;
+        }
+        if (PyTuple_Size(path) <= 0)
+        {
+            PyErr_SetString(PyExc_ValueError, "path too small");
+            return false;
+        }
+        out.clear();
+        for (ssize_t i = 0; i < PyTuple_Size(path); i++)
+        {
+            PyObject *path_item = PyTuple_GetItem(path, i);
+            if (PyUnicode_Check(path_item))
+            {
+                out.push_back(PyUnicode_AsUTF8(path_item));
+            }
+            else
+            {
+                PyErr_Format(PyExc_TypeError, "path item %i not unicode", int(i));
+                return false;
+            }
+        }
+        return true;
+    }
+
+    int can_call_helper(lua_State *L)
+    {
+        int nargs = lua_gettop(L);
+        lua_getglobal(L, luaL_checkstring(L, 1));
+        for (int i = 2; i <= nargs; i++)
+        {
+            lua_getfield(L, -1, luaL_checkstring(L, i));
+            lua_remove(L, -2);
+        }
+        luaL_checktype(L, -1, LUA_TFUNCTION);
+        return 1;
+    }
+
+    bool call_check(lua_State *L, const vector<const char*> &path)
+    {
+        lua_pushcfunction(L, can_call_helper);
+        for (auto s : path)
+            lua_pushstring(L, s);
+        return (lua_pcall(L, path.size(), 1, 0) == LUA_OK);
+    }
 }
 
 class PyGILLock {
@@ -110,34 +171,63 @@ namespace api {
 
     PyObject *lua_can_call(PyObject *self, PyObject *args)
     {
-        if (!PyTuple_Check(PyTuple_GetItem(args, 0)))
-        {
-            PyErr_SetString(PyExc_TypeError, "path not a tuple");
+        if (PyTuple_Size(args) != 1)
+            return PyErr_Format(PyExc_TypeError, "%s expected 1 argument, got %i",
+                __FUNCTION__, int(PyTuple_Size(args)));
+        vector<const char*> path;
+        if (!pylua::call_get_path(PyTuple_GetItem(args, 0), path))
             return nullptr;
-        }
-        PyObject *path = PyTuple_GetItem(args, 0);
-        vector<const char*> vpath;
-        for (ssize_t i = 0; i < PyTuple_Size(path); i++)
-        {
-            PyObject *path_item = PyTuple_GetItem(path, i);
-            if (PyUnicode_Check(path_item))
-            {
-                vpath.push_back(PyUnicode_AsUTF8(path_item));
-            }
-            else
-            {
-                PyErr_SetString(PyExc_TypeError, "path item not unicode");
-                return nullptr;
-            }
-        }
 
         lua_State *L = Lua::Core::State;
-        lua_pushcfunction(L, lua_can_call_helper);
-        for (auto s : vpath)
-            lua_pushstring(L, s);
-        bool can_call = (lua_pcall(L, vpath.size(), 0, 0) == LUA_OK);
+        bool can_call = pylua::call_check(L, path);
         lua_settop(L, 0);
         return PyBool_FromLong(can_call);
+    }
+
+    PyObject *lua_call_func(PyObject *self, PyObject *args)
+    {
+        if (PyTuple_Size(args) < 1)
+            return PyErr_Format(PyExc_TypeError, "%s expected at least 1 argument, got %i",
+                __FUNCTION__, int(PyTuple_Size(args)));
+        vector<const char*> path;
+        if (!pylua::call_get_path(PyTuple_GetItem(args, 0), path))
+            return nullptr;
+
+        lua_State *L = Lua::Core::State;
+        Lua::StackUnwinder unwind(L);
+
+        bool can_call = pylua::call_check(L, path);
+        if (!can_call)
+            return PyErr_Format(PyExc_TypeError, "can't call function %s",
+                path[path.size() - 1]);
+
+        for (ssize_t i = 1; i < PyTuple_Size(args); i++)
+        {
+            if (!pylua::push(L, PyTuple_GetItem(args, i)))
+                return PyErr_Format(PyExc_TypeError, "cannot pass arg %i (%R) to Lua",
+                    int(i), PyTuple_GetItem(args, i));
+        }
+
+        if (lua_pcall(L, PyTuple_Size(args) - 1, LUA_MULTRET, 0) != LUA_OK)
+            return PyErr_Format(PyExc_RuntimeError, "Lua error: %s",
+                lua_isstring(L, -1) ? lua_tostring(L, -1) : "unknown");
+
+        int nres = lua_gettop(L) - int(unwind);
+
+        if (nres == 1)
+            return pylua::topyobject(L, -1);
+        else
+        {
+            PyObject *ret = PyTuple_New(nres);
+            for (int i = 1; i <= nres; i++)
+            {
+                PyObject *retobj = pylua::topyobject(L, i);
+                if (!retobj)
+                    return nullptr;
+                PyTuple_SetItem(ret, i - 1, retobj);
+            }
+            return ret;
+        }
     }
 }
 
@@ -149,6 +239,7 @@ PyMethodDef dfhack_methods[] = {
     WRAP(get_global_address),
     WRAP(all_type_ids),
     WRAP(lua_can_call),
+    WRAP(lua_call_func),
     {0, 0, 0, 0}
 };
 

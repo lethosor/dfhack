@@ -54,7 +54,7 @@ class LuaFunction:
         self.path = path
 
     def __call__(self, *args):
-        return _dfhack.lua_call(self.path, args)
+        return _dfhack.lua_call_func(self.path, *args)
 
 class LuaModule:
     def __init__(self, name):
@@ -63,8 +63,11 @@ class LuaModule:
     def __getattr__(self, name):
         path = ('dfhack', self.name, name)
         if _dfhack.lua_can_call(path):
-            return LuaFunction(path)
+            func = LuaFunction(path)
+            setattr(self, name, func)
+            return func
         else:
             raise AttributeError("%r module has no attribute %r" % (self.name, name))
 
+internal = LuaModule("internal")
 world = LuaModule("world")
