@@ -70,7 +70,7 @@ namespace api {
 
         if (color != -100)
             py_console->color(color_value(color));
-        py_console->print(msg);
+        py_console->print("%s", msg);
         if (color != -100)
             py_console->color(COLOR_RESET);
 
@@ -83,7 +83,7 @@ namespace api {
         if (!PyArg_ParseTuple(args, "z", &msg))
             return nullptr;
 
-        py_console->printerr(msg);
+        py_console->printerr("%s", msg);
 
         Py_RETURN_NONE;
     }
