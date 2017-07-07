@@ -24,6 +24,14 @@ DFHACK_PLUGIN("python");
 
 color_ostream_proxy *py_console = 0;
 
+class PyGILLock {
+public:
+    PyGILLock() : gstate(PyGILState_Ensure()) {}
+    ~PyGILLock() { PyGILState_Release(gstate); }
+private:
+    PyGILState_STATE gstate;
+};
+
 namespace api {
     PyObject *print(PyObject *self, PyObject *args)
     {
@@ -89,7 +97,6 @@ PyModuleDef dfhack_module = {
 };
 
 PyObject* dfhack_init() {
-    cout << "dfhack_init" << endl;
     return PyModule_Create(&dfhack_module);
 }
 
@@ -103,7 +110,11 @@ bool py_startup(color_ostream &out) {
         "./hack/python/stdlib-dynload" PATHSEP
         "./hack/python/stdlib-python.zip",
         nullptr));
-    Py_Initialize();
+
+    Py_InitializeEx(0);
+    PyEval_InitThreads();
+    // PyEval_ReleaseThread(PyThreadState_Get());
+    // PyEval_ReleaseLock();
 
     PyRun_SimpleString("import dfhack");
 

@@ -7,7 +7,6 @@ class DFObject(object):
     __str__ = __repr__
 
 for type_id, type_name in _dfhack.all_type_ids().items():
-    print(type_id, type_name)
     globals()[type_name] = type(type_name, (DFObject,), {'_id': type_id})
 
 def reinterpret_cast(obj_type, address):
