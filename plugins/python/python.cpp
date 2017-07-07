@@ -286,6 +286,13 @@ command_result run_script(string name, vector<string> args)
         return CR_NOT_FOUND;
 
     PyObject *dfhack = PyImport_ImportModule("dfhack");
+    if (!dfhack)
+    {
+        Core::printerr("could not import dfhack module\n");
+        if (PyErr_Occurred())
+            PyErr_Print();
+        return CR_FAILURE;
+    }
     PyObject *run_script = PyObject_GetAttrString(dfhack, "run_script");
     if (run_script)
     {
