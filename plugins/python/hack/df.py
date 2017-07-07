@@ -4,10 +4,11 @@ _type_ids = _dfhack.all_type_ids()
 
 class _DFObjectMeta(type):
     def __instancecheck__(self, instance):
-        return self._id == instance._id
+        return hasattr(instance, '_id') and _dfhack.type_is_subclass(self._id, instance._id)
 
-    def __subclasscheck__(self, subclass):
-        return self._id == subclass._id
+    # identical implementations - this takes "subclass" instead of "instance",
+    # but both have "_id" fields
+    __subclasscheck__ = __instancecheck__
 
 class DFObject:
     __metaclass__ = _DFObjectMeta

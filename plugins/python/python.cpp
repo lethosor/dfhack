@@ -31,6 +31,12 @@ DFHACK_PLUGIN("python");
 color_ostream_proxy *py_console = 0;
 set<compound_identity*> all_identities;
 
+bool is_struct_identity(struct_identity *sid)
+{
+    return all_identities.count((compound_identity*)sid) &&
+        dynamic_cast<struct_identity*>((compound_identity*)sid);
+}
+
 namespace pylua
 {
     bool push(lua_State *L, PyObject *obj)
@@ -202,6 +208,37 @@ namespace api {
         {
             return PyErr_Format(PyExc_TypeError, "unknown DF type: %p", id);
         }
+    }
+
+    API_FUNC(type_is_subclass)
+    {
+        struct_identity *id_parent, *id_subclass;
+        if (!PyArg_ParseTuple(args, "nn", (ssize_t*)&id_parent, (ssize_t*)&id_subclass))
+            return nullptr;
+
+        if (id_parent == id_subclass)
+            Py_RETURN_TRUE;
+
+        if (!is_struct_identity(id_parent))
+        {
+            if (all_identities.count(id_parent))
+                Py_RETURN_FALSE;
+            return PyErr_Format(PyExc_TypeError, "unknown parent ID: %p", id_parent);
+        }
+        if (!is_struct_identity(id_subclass))
+        {
+            if (all_identities.count(id_subclass))
+                Py_RETURN_FALSE;
+            return PyErr_Format(PyExc_TypeError, "unknown subclass ID: %p", id_subclass);
+        }
+
+        while (id_subclass)
+        {
+            if (id_subclass == id_parent)
+                Py_RETURN_TRUE;
+            id_subclass = id_subclass->getParent();
+        }
+        Py_RETURN_FALSE;
     }
 
     API_FUNC(lua_can_call)
