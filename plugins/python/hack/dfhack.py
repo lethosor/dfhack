@@ -69,5 +69,6 @@ class LuaModule:
         else:
             raise AttributeError("%r module has no attribute %r" % (self.name, name))
 
+gui = LuaModule("gui")
 internal = LuaModule("internal")
 world = LuaModule("world")

@@ -352,6 +352,8 @@ command_result df_py (color_ostream &out, std::vector <std::string> & parameters
 {
     if (parameters.empty())
         return CR_WRONG_USAGE;
+
+    CoreSuspender suspend;
     PyRun_SimpleString(parameters[0].c_str());
     return CR_OK;
 }
@@ -361,6 +363,7 @@ command_result df_pyscript (color_ostream &out, vector<string> &args)
     if (args.empty())
         return CR_WRONG_USAGE;
 
+    CoreSuspender suspend;
     string script = args[0];
     args.erase(args.begin());
     auto cr = run_script(script, args);
