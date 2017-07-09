@@ -12,6 +12,7 @@
 #include "lua.h"
 #include "lauxlib.h"
 #include "LuaTools.h"
+#include "LuaWrapper.h"
 
 // This plugin uses size_t for pointers, since Python offers an easy way to
 // convert PyLong objects to size_t's
@@ -28,17 +29,58 @@ DFHACK_PLUGIN("python");
     #define PATHSEP ";"
 #endif
 
-color_ostream_proxy *py_console = 0;
+color_ostream_proxy *py_console = nullptr;
 set<compound_identity*> all_identities;
 
-bool is_struct_identity(struct_identity *sid)
+bool is_struct_identity(compound_identity *id)
 {
-    return all_identities.count((compound_identity*)sid) &&
-        dynamic_cast<struct_identity*>((compound_identity*)sid);
+    return all_identities.count(id) && dynamic_cast<struct_identity*>(id);
+}
+
+namespace DFObject {
+    compound_identity *get_identity(PyObject *obj)
+    {
+        if (!PyObject_HasAttrString(obj, "_id"))
+            return nullptr;
+
+        PyObject *id_field = PyObject_GetAttrString(obj, "_id");
+        compound_identity *id = nullptr;
+        if (PyLong_Check(id_field))
+        {
+            id = (compound_identity*)PyLong_AsSize_t(id_field);
+            if (!all_identities.count(id))
+                id = nullptr;
+        }
+        Py_DECREF(id_field);
+        return id;
+    }
+
+    void *get_address(PyObject *obj)
+    {
+        if (!PyObject_HasAttrString(obj, "_address"))
+            return nullptr;
+
+        PyObject *address_field = PyObject_GetAttrString(obj, "_address");
+        void *addr = nullptr;
+        if (PyLong_Check(address_field))
+        {
+            addr = (void*)PyLong_AsSize_t(address_field);
+            if (PyErr_Occurred())
+            {
+                addr = nullptr;
+                PyErr_Print();
+            }
+        }
+        Py_DECREF(address_field);
+        return addr;
+    }
 }
 
 namespace pylua
 {
+    PyObject *class_DFObject = nullptr;
+    PyObject *func_reinterpret_cast = nullptr;
+
     bool push(lua_State *L, PyObject *obj)
     {
         if (obj == Py_None)
@@ -52,8 +94,51 @@ namespace pylua
         else if (PyUnicode_Check(obj))
             lua_pushstring(L, PyUnicode_AsUTF8(obj));
         else
-            return false;
+        {
+            if (class_DFObject && PyObject_IsInstance(obj, class_DFObject))
+            {
+                compound_identity *id = DFObject::get_identity(obj);
+                void *addr = DFObject::get_address(obj);
+                Lua::PushDFObject(L, id, addr);
+            }
+            else
+                return false;
+        }
         return true;
+    }
+
+    type_identity *get_object_identity(lua_State *L, int idx, const char *ctx = "get_object_identity")
+    {
+        if (!lua_isuserdata(L, idx))
+            luaL_error(L, "Object expected in %s", ctx);
+
+        if (!lua_getmetatable(L, idx))
+            luaL_error(L, "Invalid object in %s", ctx);
+
+        // Extract identity from metatable
+        lua_rawgetp(L, -1, &LuaWrapper::DFHACK_IDENTITY_FIELD_TOKEN);
+
+        type_identity *id = (type_identity*)lua_touserdata(L, -1);
+
+        if (!id)
+            luaL_error(L, "Invalid object identity in %s", ctx);
+
+        lua_pop(L, 2);
+
+        return id;
+    }
+
+    void *get_object_address(lua_State *L, int idx)
+    {
+        auto ref = (LuaWrapper::DFRefHeader*)lua_touserdata(L, idx);
+        return ref ? ref->ptr : nullptr;
+    }
+
+    int get_object_info(lua_State *L)
+    {
+        lua_pushlightuserdata(L, get_object_identity(L, 1, "get_object_info"));
+        lua_pushlightuserdata(L, get_object_address(L, 1));
+        return 2;
     }
 
     PyObject *topyobject(lua_State *L, int idx)
@@ -70,6 +155,37 @@ namespace pylua
             return PyFloat_FromDouble(lua_tonumber(L, idx));
         else if (lua_isstring(L, idx))
             return PyUnicode_FromString(lua_tostring(L, idx));
+        else if (Lua::IsDFObject(L, idx) == Lua::OBJ_REF && func_reinterpret_cast)
+        {
+            LuaWrapper::lua_dup(L);
+            lua_pushcfunction(L, get_object_info);
+            LuaWrapper::lua_swap(L);
+            if (lua_pcall(L, 1, 2, 0) == LUA_OK)
+            {
+                auto id = (compound_identity*)lua_touserdata(L, -2);
+                void *addr = lua_touserdata(L, -1);
+                if (all_identities.count(id))
+                {
+                    PyObject *args = PyTuple_New(2);
+                    PyTuple_SetItem(args, 0, PyLong_FromSize_t(size_t(id)));
+                    PyTuple_SetItem(args, 1, PyLong_FromSize_t(size_t(addr)));
+                    PyObject *ret = PyObject_CallObject(func_reinterpret_cast, args);
+                    Py_DECREF(args);
+                    return ret;
+                }
+                else
+                {
+                    return PyErr_Format(PyExc_TypeError, "cannot convert %s %p to Python",
+                        "bad type", id);
+                }
+            }
+            else
+            {
+                return PyErr_Format(PyExc_RuntimeError, "Lua error: %s",
+                    lua_isstring(L, -1) ? lua_tostring(L, -1) : "unknown");
+            }
+
+        }
         else
             return PyErr_Format(PyExc_TypeError, "cannot convert %s to Python",
                 lua_typename(L, lua_type(L, idx)));
@@ -328,6 +444,28 @@ PyObject* dfhack_init()
     return PyModule_Create(&dfhack_module);
 }
 
+PyObject *import_module(color_ostream &out, const char *module)
+{
+    PyObject *mod = PyImport_ImportModule(module);
+    if (!mod)
+    {
+        out.printerr("import failed: %s\n", module);
+        PyErr_Clear();
+    }
+    return mod;
+}
+
+PyObject *import_from(color_ostream &out, PyObject *module, const char *name)
+{
+    PyObject *ret = PyObject_GetAttrString(module, name);
+    if (!ret)
+    {
+        out.printerr("import failed: %s\n", name);
+        PyErr_Clear();
+    }
+    return ret;
+}
+
 bool py_startup(color_ostream &out) {
     PyImport_AppendInittab("_dfhack", dfhack_init);
 
@@ -344,7 +482,25 @@ bool py_startup(color_ostream &out) {
     // PyEval_ReleaseThread(PyThreadState_Get());
     // PyEval_ReleaseLock();
 
-    PyRun_SimpleString("import dfhack");
+    PyObject *df_module, *dfhack_module;
+    if (!(df_module = import_module(out, "df")) || !(dfhack_module = import_module(out, "dfhack")))
+        return false;
+
+    pylua::class_DFObject = import_from(out, df_module, "DFObject");
+    pylua::func_reinterpret_cast = import_from(out, df_module, "reinterpret_cast");
+
+    Py_DECREF(df_module);
+    Py_DECREF(dfhack_module);
+
+    PyRun_SimpleString("import df, dfhack");
+
+    return true;
+}
+
+bool py_cleanup(color_ostream &out)
+{
+    Py_CLEAR(pylua::class_DFObject);
+    Py_CLEAR(pylua::func_reinterpret_cast);
 
     return true;
 }
@@ -412,6 +568,9 @@ DFhackCExport command_result plugin_init (color_ostream &out, std::vector <Plugi
 
 DFhackCExport command_result plugin_shutdown (color_ostream &out)
 {
+    if (!py_cleanup(out))
+        out.printerr("py_cleanup failed\n");
+
     // PyGILState_Ensure();
     if (Py_FinalizeEx())
         out.printerr("Py_FinalizeEx failed\n");

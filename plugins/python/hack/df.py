@@ -23,6 +23,11 @@ for type_id, type_name in _type_ids.items():
     globals()[type_name] = _DFObjectMeta(type_name, (DFObject,), {'_id': type_id})
 
 def reinterpret_cast(obj_type, address):
+    if isinstance(obj_type, int):
+        if obj_type in _type_ids:
+            obj_type = globals()[_type_ids[obj_type]]
+        else:
+            raise TypeError("Invalid type ID: %i" % obj_type)
     if not issubclass(obj_type, DFObject):
         raise TypeError("Not a DFObject subtype")
     obj = obj_type()

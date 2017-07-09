@@ -47,27 +47,27 @@ namespace LuaWrapper {
     /**
      * Metatable pkey: type identity of the object
      */
-    extern LuaToken DFHACK_IDENTITY_FIELD_TOKEN;
+    DFHACK_EXPORT extern LuaToken DFHACK_IDENTITY_FIELD_TOKEN;
 
     /**
      * Registry pkey: hash of type metatables <-> type identities.
      */
-    extern LuaToken DFHACK_TYPETABLE_TOKEN;
+    DFHACK_EXPORT extern LuaToken DFHACK_TYPETABLE_TOKEN;
 
     /**
      * Registry pkey: hash of type identity -> node in df.etc...
      */
-    extern LuaToken DFHACK_TYPEID_TABLE_TOKEN;
+    DFHACK_EXPORT extern LuaToken DFHACK_TYPEID_TABLE_TOKEN;
 
     /**
      * Registry pkey: hash of enum/bitfield identity -> index lookup table
      */
-    extern LuaToken DFHACK_ENUM_TABLE_TOKEN;
+    DFHACK_EXPORT extern LuaToken DFHACK_ENUM_TABLE_TOKEN;
 
     /**
      * Registry pkey: hash of pointer target identity <-> adhoc pointer identity userdata.
      */
-    extern LuaToken DFHACK_PTR_IDTABLE_TOKEN;
+    DFHACK_EXPORT extern LuaToken DFHACK_PTR_IDTABLE_TOKEN;
 
 // Function registry names
 #define DFHACK_CHANGEERROR_NAME "DFHack::ChangeError"
