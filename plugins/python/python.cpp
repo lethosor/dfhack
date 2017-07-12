@@ -141,6 +141,24 @@ namespace pylua
         return 2;
     }
 
+    PyObject *topyobject(type_identity *id, void *addr)
+    {
+        if (all_identities.count((compound_identity*)id))
+        {
+            PyObject *args = PyTuple_New(2);
+            PyTuple_SetItem(args, 0, PyLong_FromSize_t(size_t(id)));
+            PyTuple_SetItem(args, 1, PyLong_FromSize_t(size_t(addr)));
+            PyObject *ret = PyObject_CallObject(func_reinterpret_cast, args);
+            Py_DECREF(args);
+            return ret;
+        }
+        else
+        {
+            return PyErr_Format(PyExc_TypeError, "cannot convert %s %p to Python",
+                "bad type", id);
+        }
+    }
+
     PyObject *topyobject(lua_State *L, int idx)
     {
         if (lua_isnone(L, idx))
@@ -162,22 +180,9 @@ namespace pylua
             LuaWrapper::lua_swap(L);
             if (lua_pcall(L, 1, 2, 0) == LUA_OK)
             {
-                auto id = (compound_identity*)lua_touserdata(L, -2);
+                auto id = (type_identity*)lua_touserdata(L, -2);
                 void *addr = lua_touserdata(L, -1);
-                if (all_identities.count(id))
-                {
-                    PyObject *args = PyTuple_New(2);
-                    PyTuple_SetItem(args, 0, PyLong_FromSize_t(size_t(id)));
-                    PyTuple_SetItem(args, 1, PyLong_FromSize_t(size_t(addr)));
-                    PyObject *ret = PyObject_CallObject(func_reinterpret_cast, args);
-                    Py_DECREF(args);
-                    return ret;
-                }
-                else
-                {
-                    return PyErr_Format(PyExc_TypeError, "cannot convert %s %p to Python",
-                        "bad type", id);
-                }
+                return topyobject(id, addr);
             }
             else
             {
@@ -396,7 +401,7 @@ namespace api {
                     int(i), PyTuple_GetItem(args, i));
         }
 
-        if (lua_pcall(L, PyTuple_Size(args) - 1, LUA_MULTRET, 0) != LUA_OK)
+        if (!Lua::SafeCall(*py_console, L, PyTuple_Size(args) - 1, LUA_MULTRET, false))
             return PyErr_Format(PyExc_RuntimeError, "Lua error: %s",
                 lua_isstring(L, -1) ? lua_tostring(L, -1) : "unknown");
 

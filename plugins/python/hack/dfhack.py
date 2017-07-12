@@ -75,4 +75,5 @@ class LuaModule:
 gui = LuaModule("gui")
 internal = LuaModule("internal")
 screen = LuaModule("screen")
+units = LuaModule("units")
 world = LuaModule("world")
