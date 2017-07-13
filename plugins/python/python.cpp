@@ -557,10 +557,10 @@ command_result df_pyscript (color_ostream &out, std::vector <std::string> & para
 
 DFhackCExport command_result plugin_init (color_ostream &out, std::vector <PluginCommand> &commands)
 {
+    py_console = new color_ostream_proxy(Core::getInstance().getConsole());
+
     if (!py_startup(out))
         return CR_FAILURE;
-
-    py_console = new color_ostream_proxy(Core::getInstance().getConsole());
 
     commands.push_back(PluginCommand(
         "py", "", df_py, false
