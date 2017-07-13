@@ -686,8 +686,8 @@ struct jobutils_hook : public df::viewscreen_dwarfmodest
 
     void handle_input(set<df::interface_key> *input)
     {
-        if (ui_build_selector->building_subtype >= 7)
-            return;
+        // if (ui_build_selector->building_subtype >= 7)
+        //     return;
 
         if (in_material_choice_stage())
         {
@@ -912,6 +912,7 @@ struct jobutils_hook : public df::viewscreen_dwarfmodest
                 valid_building_sites.push_back(anchor);
             }
 
+            Core::print("ok_to_continue = %i\n", int(ok_to_continue));
             if (!ok_to_continue)
             {
                 cancel_box_selection();
@@ -943,15 +944,21 @@ struct jobutils_hook : public df::viewscreen_dwarfmodest
                     item = NULL;
                 }
 
+                Core::print("item = %p\n", item);
                 if (item != NULL)
                 {
                     if (designate_new_construction(site.pos, type, item))
                     {
+                        Core::print("added construction: %i\n", type);
                         box_select_materials.pop_front();
                         box_select_mode = AUTOSELECT_MATERIALS;
                         send_key(interface_key::LEAVESCREEN); //Must do this to register items in use
                         send_key(hotkeys[type]);
                         box_select_mode = SELECT_MATERIALS;
+                    }
+                    else
+                    {
+                        Core::printerr("could not add construction: %i\n", type);
                     }
                     continue;
                 }
@@ -1095,7 +1102,8 @@ struct jobutils_hook : public df::viewscreen_dwarfmodest
                 }
             }
         }
-        else if (in_placement_stage() && ui_build_selector->building_subtype < 7)
+        // else if (in_placement_stage() && ui_build_selector->building_subtype < 7)
+        else if (in_placement_stage())
         {
             OutputString(COLOR_BROWN, x, y, "DFHack Options", true, left_margin);
             AMOutputToggleString(x, y, "Auto Mat-select", "a", auto_choose_materials, true, left_margin);
