@@ -20,6 +20,7 @@ static_assert(sizeof(void*) == sizeof(size_t), "void* and size_t are not the sam
 
 using namespace std;
 using namespace DFHack;
+using namespace DFHack::LuaWrapper;
 
 DFHACK_PLUGIN("python");
 
@@ -116,7 +117,7 @@ namespace pylua
             luaL_error(L, "Invalid object in %s", ctx);
 
         // Extract identity from metatable
-        lua_rawgetp(L, -1, &LuaWrapper::DFHACK_IDENTITY_FIELD_TOKEN);
+        lua_rawgetp(L, -1, &DFHACK_IDENTITY_FIELD_TOKEN);
 
         type_identity *id = (type_identity*)lua_touserdata(L, -1);
 
@@ -130,7 +131,7 @@ namespace pylua
 
     void *get_object_address(lua_State *L, int idx)
     {
-        auto ref = (LuaWrapper::DFRefHeader*)lua_touserdata(L, idx);
+        auto ref = (DFRefHeader*)lua_touserdata(L, idx);
         return ref ? ref->ptr : nullptr;
     }
 
@@ -175,9 +176,9 @@ namespace pylua
             return PyUnicode_FromString(lua_tostring(L, idx));
         else if (Lua::IsDFObject(L, idx) == Lua::OBJ_REF && func_reinterpret_cast)
         {
-            LuaWrapper::lua_dup(L);
+            lua_dup(L);
             lua_pushcfunction(L, get_object_info);
-            LuaWrapper::lua_swap(L);
+            lua_swap(L);
             if (lua_pcall(L, 1, 2, 0) == LUA_OK)
             {
                 auto id = (type_identity*)lua_touserdata(L, -2);
@@ -225,7 +226,7 @@ namespace pylua
         return true;
     }
 
-    int can_call_helper(lua_State *L)
+    void recursive_get(lua_State *L)
     {
         int nargs = lua_gettop(L);
         lua_getglobal(L, luaL_checkstring(L, 1));
@@ -234,6 +235,11 @@ namespace pylua
             lua_getfield(L, -1, luaL_checkstring(L, i));
             lua_remove(L, -2);
         }
+    }
+
+    int can_call_helper(lua_State *L)
+    {
+        recursive_get(L);
         luaL_checktype(L, -1, LUA_TFUNCTION);
         return 1;
     }
@@ -244,6 +250,31 @@ namespace pylua
         for (auto s : path)
             lua_pushstring(L, s);
         return (lua_pcall(L, path.size(), 1, 0) == LUA_OK);
+    }
+
+    int list_funcs_helper(lua_State *L)
+    {
+        recursive_get(L);
+        int tbl = lua_gettop(L);
+        luaL_checktype(L, tbl, LUA_TTABLE);
+        lua_newtable(L);
+        int func_list = lua_gettop(L);
+        int func_i = 1;
+
+        // first key
+        lua_pushnil(L);
+        while (lua_next(L, tbl))
+        {
+            if (lua_type(L, -1) == LUA_TFUNCTION && lua_type(L, -2) == LUA_TSTRING)
+            {
+                lua_pushinteger(L, func_i++); // push index
+                lua_pushvalue(L, -3);       // copy name
+                lua_settable(L, func_list); // func_list[func_i] = name
+            }
+            lua_pop(L, 1);  // pop value
+        }
+
+        return 1;
     }
 }
 
@@ -377,6 +408,41 @@ namespace api {
         return PyBool_FromLong(can_call);
     }
 
+    API_FUNC(lua_list_funcs)
+    {
+        lua_State *L = Lua::Core::State;
+        Lua::StackUnwinder top(L);
+
+        vector<const char*> path;
+        if (!pylua::call_get_path(args, path))
+            return nullptr;
+
+        lua_pushcfunction(L, pylua::list_funcs_helper);
+        for (auto s : path)
+            lua_pushstring(L, s);
+
+        if (lua_pcall(L, path.size(), 1, 0) != LUA_OK)
+            return PyErr_Format(PyExc_RuntimeError, "Lua error: %s",
+                lua_isstring(L, -1) ? lua_tostring(L, -1) : "unknown");
+
+        if (!lua_istable(L, -1))
+            return PyErr_Format(PyExc_TypeError,
+                "list_funcs_helper did not return a table");
+
+        vector<const char*> names;
+        lua_pushnil(L);
+        while (lua_next(L, -2))
+        {
+            names.push_back(lua_tostring(L, -1));
+            lua_pop(L, 1);
+        }
+
+        PyObject *list = PyList_New(names.size());
+        for (size_t i = 0; i < names.size(); i++)
+            PyList_SetItem(list, i, PyUnicode_FromString(names[i]));
+        return list;
+    }
+
     API_FUNC(lua_call_func)
     {
         if (PyTuple_Size(args) < 1)
@@ -401,7 +467,7 @@ namespace api {
                     int(i), PyTuple_GetItem(args, i));
         }
 
-        if (!Lua::SafeCall(*py_console, L, PyTuple_Size(args) - 1, LUA_MULTRET, false))
+        if (!Lua::SafeCall(*py_console, L, PyTuple_Size(args) - 1, LUA_MULTRET, true))
             return PyErr_Format(PyExc_RuntimeError, "Lua error: %s",
                 lua_isstring(L, -1) ? lua_tostring(L, -1) : "unknown");
 

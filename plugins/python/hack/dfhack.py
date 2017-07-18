@@ -1,6 +1,7 @@
 """ Main DFHack Python module """
 
 import _dfhack
+import re
 import sys
 
 __all__ = ['print', 'printerr', 'run_script']
@@ -71,6 +72,11 @@ class LuaModule:
             return func
         else:
             raise AttributeError("%r module has no attribute %r" % (self.name, name))
+
+for func in _dfhack.lua_list_funcs('dfhack'):
+    fname = re.sub(r'[A-Z]', lambda m: '_' + m.group(0).lower(), func)
+    if fname not in globals():
+        globals()[fname] = LuaFunction(('dfhack', func))
 
 gui = LuaModule("gui")
 internal = LuaModule("internal")
