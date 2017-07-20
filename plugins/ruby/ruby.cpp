@@ -496,6 +496,36 @@ static void df_rubythread(void *p)
     }
 }
 
+class RubyLang : PluginScriptLanguage {
+    virtual string get_name()
+    {
+        return "Ruby";
+    }
+
+    virtual vector<string> get_file_extensions()
+    {
+        return {"rb"};
+    }
+
+    virtual string get_short_help_prefix(const string &extension)
+    {
+        if (extension == "rb")
+            return "#";
+        return "";
+    }
+
+    virtual string get_long_help(const string &filename)
+    {
+        return "no help available";
+    }
+
+    virtual command_result run_script(color_ostream &out,
+        const std::string &filename, const std::vector<std::string> &args)
+    {
+
+    }
+}
+
 
 #define BOOL_ISFALSE(v) ((v) == Qfalse || (v) == Qnil || (v) == INT2FIX(0))
 

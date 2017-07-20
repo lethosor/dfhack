@@ -333,6 +333,9 @@ bool Plugin::load(color_ostream &con)
             return false;
         }
     }
+
+    plugin_script_languages = (decltype(plugin_script_languages))LookupPlugin(plug, "plugin_script_languages");
+
     plugin_status = (command_result (*)(color_ostream &, std::string &)) LookupPlugin(plug, "plugin_status");
     plugin_onupdate = (command_result (*)(color_ostream &)) LookupPlugin(plug, "plugin_onupdate");
     plugin_shutdown = (command_result (*)(color_ostream &)) LookupPlugin(plug, "plugin_shutdown");
@@ -340,7 +343,6 @@ bool Plugin::load(color_ostream &con)
     plugin_rpcconnect = (RPCService* (*)(color_ostream &)) LookupPlugin(plug, "plugin_rpcconnect");
     plugin_enable = (command_result (*)(color_ostream &,bool)) LookupPlugin(plug, "plugin_enable");
     plugin_is_enabled = (bool*) LookupPlugin(plug, "plugin_is_enabled");
-    plugin_eval_ruby = (command_result (*)(color_ostream &, const char*)) LookupPlugin(plug, "plugin_eval_ruby");
     index_lua(plug);
     plugin_lib = plug;
     commands.clear();
@@ -779,7 +781,6 @@ PluginManager::PluginManager(Core * core) : core(core)
 {
     plugin_mutex = new recursive_mutex();
     cmdlist_mutex = new mutex();
-    ruby = NULL;
 }
 
 PluginManager::~PluginManager()
@@ -954,7 +955,7 @@ void PluginManager::OnStateChange(color_ostream &out, state_change_event event)
         it->second->on_state_change(out, event);
 }
 
-void PluginManager::registerCommands( Plugin * p )
+void PluginManager::registerCommands(Plugin *p)
 {
     cmdlist_mutex->lock();
     vector <PluginCommand> & cmds = p->commands;
@@ -969,12 +970,10 @@ void PluginManager::registerCommands( Plugin * p )
         }
         command_map[name] = p;
     }
-    if (p->plugin_eval_ruby)
-        ruby = p;
     cmdlist_mutex->unlock();
 }
 
-void PluginManager::unregisterCommands( Plugin * p )
+void PluginManager::unregisterCommands(Plugin *p)
 {
     cmdlist_mutex->lock();
     vector <PluginCommand> & cmds = p->commands;
@@ -982,9 +981,22 @@ void PluginManager::unregisterCommands( Plugin * p )
     {
         command_map.erase(cmds[i].name);
     }
-    if (p->plugin_eval_ruby)
-        ruby = NULL;
     cmdlist_mutex->unlock();
+}
+
+void PluginManager::registerScriptLanguage(Plugin *p, PluginScriptLanguage *lang)
+{
+    script_languages[p].insert(lang);
+}
+
+void PluginManager::unregisterScriptLanguage(Plugin *p, PluginScriptLanguage *lang)
+{
+    script_languages[p].erase(lang);
+}
+
+vector<PluginScriptLanguage*> listScriptLanguages()
+{
+    vector<PluginScriptLanguage*> out;
 }
 
 Plugin *PluginManager::operator[] (std::string name)

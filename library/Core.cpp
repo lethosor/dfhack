@@ -300,14 +300,14 @@ static void listScripts(PluginManager *plug_mgr, std::map<string,string> &pset, 
                 pset[key] = help;
             }
         }
-        else if (plug_mgr->ruby && plug_mgr->ruby->is_enabled() && hasEnding(files[i], ".rb"))
-        {
-            string help = getScriptHelp(path + files[i], "#");
-            string key = prefix + files[i].substr(0, files[i].size()-3);
-            if (pset.find(key) == pset.end()) {
-                pset[key] = help;
-            }
-        }
+        // else if (plug_mgr->ruby && plug_mgr->ruby->is_enabled() && hasEnding(files[i], ".rb"))
+        // {
+        //     string help = getScriptHelp(path + files[i], "#");
+        //     string key = prefix + files[i].substr(0, files[i].size()-3);
+        //     if (pset.find(key) == pset.end()) {
+        //         pset[key] = help;
+        //     }
+        // }
         else if (all && !files[i].empty() && files[i][0] != '.')
         {
             listScripts(plug_mgr, pset, path+files[i]+"/", all, prefix+files[i]+"/");
@@ -383,20 +383,20 @@ static command_result enableLuaScript(color_ostream &out, std::string name, bool
     return ok ? CR_OK : CR_FAILURE;
 }
 
-static command_result runRubyScript(color_ostream &out, PluginManager *plug_mgr, std::string filename, vector<string> &args)
-{
-    if (!plug_mgr->ruby || !plug_mgr->ruby->is_enabled())
-        return CR_FAILURE;
+// static command_result runRubyScript(color_ostream &out, PluginManager *plug_mgr, std::string filename, vector<string> &args)
+// {
+//     if (!plug_mgr->ruby || !plug_mgr->ruby->is_enabled())
+//         return CR_FAILURE;
 
-    std::string rbcmd = "$script_args = [";
-    for (size_t i = 0; i < args.size(); i++)
-        rbcmd += "'" + args[i] + "', ";
-    rbcmd += "]\n";
+//     std::string rbcmd = "$script_args = [";
+//     for (size_t i = 0; i < args.size(); i++)
+//         rbcmd += "'" + args[i] + "', ";
+//     rbcmd += "]\n";
 
-    rbcmd += "catch(:script_finished) { load '" + filename + "' }";
+//     rbcmd += "catch(:script_finished) { load '" + filename + "' }";
 
-    return plug_mgr->ruby->eval_ruby(out, rbcmd.c_str());
-}
+//     return plug_mgr->ruby->eval_ruby(out, rbcmd.c_str());
+// }
 
 command_result Core::runCommand(color_ostream &out, const std::string &command)
 {
@@ -743,14 +743,14 @@ command_result Core::runCommand(color_ostream &con, const std::string &first_, v
                     con.print("%s: %s\n", parts[0].c_str(), help.c_str());
                     return CR_OK;
                 }
-                if (plug_mgr->ruby && plug_mgr->ruby->is_enabled() ) {
-                    file = findScript(parts[0] + ".rb");
-                    if ( file != "" ) {
-                        string help = getScriptHelp(file, "#");
-                        con.print("%s: %s\n", parts[0].c_str(), help.c_str());
-                        return CR_OK;
-                    }
-                }
+                // if (plug_mgr->ruby && plug_mgr->ruby->is_enabled() ) {
+                //     file = findScript(parts[0] + ".rb");
+                //     if ( file != "" ) {
+                //         string help = getScriptHelp(file, "#");
+                //         con.print("%s: %s\n", parts[0].c_str(), help.c_str());
+                //         return CR_OK;
+                //     }
+                // }
                 con.printerr("Unknown command: %s\n", parts[0].c_str());
                 return CR_FAILURE;
             }
@@ -1003,7 +1003,7 @@ command_result Core::runCommand(color_ostream &con, const std::string &first_, v
             con << parts[0];
             string builtin_cmd = getBuiltinCommand(parts[0]);
             string lua_path = findScript(parts[0] + ".lua");
-            string ruby_path = findScript(parts[0] + ".rb");
+            // string ruby_path = findScript(parts[0] + ".rb");
             Plugin *plug = plug_mgr->getPluginByCommand(parts[0]);
             if (builtin_cmd.size())
             {
@@ -1024,10 +1024,10 @@ command_result Core::runCommand(color_ostream &con, const std::string &first_, v
             {
                 con << " is a Lua script: " << lua_path << std::endl;
             }
-            else if (ruby_path.size())
-            {
-                con << " is a Ruby script: " << ruby_path << std::endl;
-            }
+            // else if (ruby_path.size())
+            // {
+            //     con << " is a Ruby script: " << ruby_path << std::endl;
+            // }
             else
             {
                 con << " is not a recognized command." << std::endl;
@@ -1293,8 +1293,8 @@ command_result Core::runCommand(color_ostream &con, const std::string &first_, v
                 }
                 if ( lua )
                     res = runLuaScript(con, first, parts);
-                else if ( filename != "" && plug_mgr->ruby && plug_mgr->ruby->is_enabled() )
-                    res = runRubyScript(con, plug_mgr, filename, parts);
+                // else if ( filename != "" && plug_mgr->ruby && plug_mgr->ruby->is_enabled() )
+                //     res = runRubyScript(con, plug_mgr, filename, parts);
                 else if ( try_autocomplete(con, first, completed) )
                     res = CR_NOT_IMPLEMENTED;
                 else
