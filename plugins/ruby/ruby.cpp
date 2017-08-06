@@ -14,7 +14,7 @@
 #include "tinythread.h"
 
 using namespace DFHack;
-
+using namespace std;
 
 
 // DFHack stuff
@@ -57,6 +57,8 @@ DFhackCExport command_result plugin_enable(color_ostream &out, bool enable)
     return CR_OK;
 }
 
+
+command_result runtest(color_ostream &out, vector<string> &args);
 
 DFhackCExport command_result plugin_init ( color_ostream &out, std::vector <PluginCommand> &commands)
 {
@@ -103,6 +105,8 @@ DFhackCExport command_result plugin_init ( color_ostream &out, std::vector <Plug
     commands.push_back(PluginCommand("rb",
                 "Ruby interpreter. Eval() a ruby string.",
                 df_rubyeval));
+
+    commands.push_back(PluginCommand("rbrun", "", runtest));
 
     return CR_OK;
 }
@@ -496,7 +500,7 @@ static void df_rubythread(void *p)
     }
 }
 
-class RubyLang : PluginScriptLanguage {
+class RubyLang : public PluginScriptLanguage {
     virtual string get_name()
     {
         return "Ruby";
@@ -522,9 +526,10 @@ class RubyLang : PluginScriptLanguage {
     virtual command_result run_script(color_ostream &out,
         const std::string &filename, const std::vector<std::string> &args)
     {
-
+        Core::print("run_script %s\n", filename.c_str());
     }
-}
+};
+DFHACK_PLUGIN_SCRIPT_LANGUAGE(RubyLang);
 
 
 #define BOOL_ISFALSE(v) ((v) == Qfalse || (v) == Qnil || (v) == INT2FIX(0))
@@ -1247,4 +1252,10 @@ static void ruby_bind_dfhack(void) {
     rb_define_singleton_method(rb_cDFHack, "memory_stlset_isset",     RUBY_METHOD_FUNC(rb_dfmemory_set_isset), 2);
     rb_define_singleton_method(rb_cDFHack, "memory_stlset_deletekey", RUBY_METHOD_FUNC(rb_dfmemory_set_deletekey), 2);
     rb_define_singleton_method(rb_cDFHack, "memory_stlset_clear",     RUBY_METHOD_FUNC(rb_dfmemory_set_clear), 1);
+}
+
+command_result runtest(color_ostream &out, vector<string> &args)
+{
+    rb_funcall(rb_cDFHack, rb_intern("run_script"), 1, rb_int2inum(2));
+    return CR_OK;
 }

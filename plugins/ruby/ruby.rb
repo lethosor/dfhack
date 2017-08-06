@@ -72,6 +72,10 @@ module DFHack
     class << self
         attr_accessor :onupdate_list, :onstatechange_list
 
+        def run_script(path, args)
+            puts "run_script", path
+        end
+
         # register a callback to be called every gframe or more
         # ex: DFHack.onupdate_register('fastdwarf') { DFHack.world.units[0].counters.job_counter = 0 }
         # if ticklimit is given, do not call unless this much game ticks have passed. Handles advmode time stretching.

@@ -198,6 +198,7 @@ Plugin::Plugin(Core * core, const std::string & path,
     plugin_rpcconnect = 0;
     plugin_enable = 0;
     plugin_is_enabled = 0;
+    plugin_script_languages = 0;
     state = PS_UNLOADED;
     access = new RefLock();
 }
@@ -334,8 +335,6 @@ bool Plugin::load(color_ostream &con)
         }
     }
 
-    plugin_script_languages = (decltype(plugin_script_languages))LookupPlugin(plug, "plugin_script_languages");
-
     plugin_status = (command_result (*)(color_ostream &, std::string &)) LookupPlugin(plug, "plugin_status");
     plugin_onupdate = (command_result (*)(color_ostream &)) LookupPlugin(plug, "plugin_onupdate");
     plugin_shutdown = (command_result (*)(color_ostream &)) LookupPlugin(plug, "plugin_shutdown");
@@ -343,6 +342,9 @@ bool Plugin::load(color_ostream &con)
     plugin_rpcconnect = (RPCService* (*)(color_ostream &)) LookupPlugin(plug, "plugin_rpcconnect");
     plugin_enable = (command_result (*)(color_ostream &,bool)) LookupPlugin(plug, "plugin_enable");
     plugin_is_enabled = (bool*) LookupPlugin(plug, "plugin_is_enabled");
+    auto p_plugin_script_languages = (decltype(&plugin_script_languages))LookupPlugin(plug, "plugin_script_languages");
+    if (p_plugin_script_languages)
+        plugin_script_languages = *p_plugin_script_languages;
     index_lua(plug);
     plugin_lib = plug;
     commands.clear();
@@ -351,6 +353,14 @@ bool Plugin::load(color_ostream &con)
         RefAutolock lock(access);
         state = PS_LOADED;
         parent->registerCommands(this);
+        if (plugin_script_languages)
+        {
+            Core::print("%s: %p %i\n", name.c_str(), plugin_script_languages, plugin_script_languages->size());
+            for (PluginScriptLanguage *lang : *plugin_script_languages)
+            {
+                parent->registerScriptLanguage(this, lang);
+            }
+        }
         if ((plugin_onupdate || plugin_enable) && !plugin_is_enabled)
             con.printerr("Plugin %s has no enabled var!\n", name.c_str());
         fprintf(stderr, "loaded plugin %s; DFHack build %s\n", name.c_str(), plug_git_desc);
@@ -986,11 +996,14 @@ void PluginManager::unregisterCommands(Plugin *p)
 
 void PluginManager::registerScriptLanguage(Plugin *p, PluginScriptLanguage *lang)
 {
+    Core::print("%s %p\n", __FUNCTION__, lang);
+    Core::print("%s\n", lang->get_name().c_str());
     script_languages[p].insert(lang);
 }
 
 void PluginManager::unregisterScriptLanguage(Plugin *p, PluginScriptLanguage *lang)
 {
+    Core::print("%s %p\n", __FUNCTION__, lang);
     script_languages[p].erase(lang);
 }
 

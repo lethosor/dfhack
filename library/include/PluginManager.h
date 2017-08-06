@@ -240,7 +240,7 @@ namespace DFHack
 
         bool *plugin_is_enabled;
         std::vector<std::string>* plugin_globals;
-        std::vector<PluginScriptLanguage>* plugin_script_languages;
+        std::vector<PluginScriptLanguage*>* plugin_script_languages;
         command_result (*plugin_init)(color_ostream &, std::vector <PluginCommand> &);
         command_result (*plugin_status)(color_ostream &, std::string &);
         command_result (*plugin_shutdown)(color_ostream &);
@@ -316,8 +316,8 @@ namespace DFHack
     DFhackDataExport Plugin *plugin_self = NULL;\
     std::vector<std::string> plugin_globals_;\
     DFhackDataExport std::vector<std::string> *plugin_globals = &plugin_globals_; \
-    std::vector<PluginScriptLanguage> plugin_script_languages_;\
-    DFhackDataExport std::vector<PluginScriptLanguage> *plugin_script_languages = &plugin_script_languages_;\
+    std::vector<PluginScriptLanguage*> plugin_script_languages_;\
+    DFhackDataExport std::vector<PluginScriptLanguage*> *plugin_script_languages = &plugin_script_languages_;\
     DFhackDataExport bool plugin_dev = is_dev;
 
 /// You have to include DFHACK_PLUGIN("plugin_name") in every plugin you write - just once. Ideally at the top of the main file.
@@ -331,9 +331,9 @@ namespace DFHack
     DFhackDataExport bool plugin_is_enabled = false; \
     bool &varname = plugin_is_enabled;
 
-#define DFHACK_PLUGIN_SCRIPT_LANGUAGE(id, cls) \
+#define DFHACK_PLUGIN_SCRIPT_LANGUAGE(cls) \
     static int CONCAT_TOKENS(script_lang_, __COUNTER__) = \
-        (plugin_script_languages->push_back(cls()), 0)
+        (plugin_script_languages->push_back(new cls()), 0)
 
 #define DFHACK_PLUGIN_LUA_COMMANDS \
     DFhackCExport const DFHack::CommandReg plugin_lua_commands[] =
