@@ -1702,6 +1702,7 @@ bool Core::Init()
             cerr << "endwin(): bind failed" << endl;
         }
         system("reset");
+        system("stty sane");
 #else
         cerr << "Headless mode not supported on Windows" << endl;
 #endif
