@@ -1701,7 +1701,6 @@ bool Core::Init()
         {
             cerr << "endwin(): bind failed" << endl;
         }
-        system("reset");
 #else
         cerr << "Headless mode not supported on Windows" << endl;
 #endif
