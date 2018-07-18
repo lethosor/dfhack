@@ -81,13 +81,9 @@ function finish_tests(ok)
 end
 
 function main()
-    for i = 1, 100 do
-        print('dummy loop ' .. tostring(i))
-        script.sleep(1, 'frames')
-    end
     for i = 1, 10 do
-        script.sleep(5, 'frames')
-        dfhack.run_command('devel/print-args print-args test ' .. tostring(i))
+        script.sleep(10, 'frames')
+        dfhack.run_command(':lua print("command test ' .. tostring(i) .. '")')
     end
     local files = get_test_files()
 
