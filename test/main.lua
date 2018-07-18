@@ -1,5 +1,3 @@
-local script = require('gui.script')
-
 local args = {...}
 local done_command = args[1]
 
@@ -81,29 +79,7 @@ function finish_tests(ok)
 end
 
 function main()
-    for i = 1, 10 do
-        script.sleep(10, 'frames')
-        dfhack.run_command(':lua print("command test ' .. tostring(i) .. '")')
-    end
     local files = get_test_files()
-
-    print('Looking for title screen...')
-    for i = 1, 100 do
-        print('loop ' .. tostring(i))
-        local scr = dfhack.gui.getCurViewscreen()
-        if df.viewscreen_titlest:is_instance(scr) then
-            break
-        else
-            scr:feed_key(df.interface_key.LEAVESCREEN)
-        end
-        script.sleep(10, 'frames')
-    end
-    local scr = dfhack.gui.getViewscreenByType(df.viewscreen_titlest)
-    if scr then
-        print('Found title screen')
-    else
-        qerror('Could not find title screen')
-    end
 
     local counts = {
         tests = 0,
@@ -161,4 +137,21 @@ function main()
     finish_tests(passed)
 end
 
-script.start(main)
+local check_count = 0
+function check_title()
+    local scr = dfhack.gui.getCurViewscreen()
+    if df.viewscreen_titlest:is_instance(scr) then
+        print('Found title screen')
+        main()
+    else
+        check_count = check_count + 1
+        if check_count > 100 then
+            qerror('Could not find title screen')
+        end
+        scr:feed_key(df.interface_key.LEAVESCREEN)
+        dfhack.timeout(10, 'frames', check_title)
+    end
+end
+
+print('Looking for title screen...')
+check_title()
