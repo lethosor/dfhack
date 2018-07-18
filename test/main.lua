@@ -85,6 +85,10 @@ function main()
         print('dummy loop ' .. tostring(i))
         script.sleep(1, 'frames')
     end
+    for i = 1, 10 do
+        script.sleep(5, 'frames')
+        dfhack.run_command('devel/print-args print-args test ' .. tostring(i))
+    end
     local files = get_test_files()
 
     print('Looking for title screen...')
