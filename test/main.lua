@@ -81,10 +81,15 @@ function finish_tests(ok)
 end
 
 function main()
+    for i = 1, 100 do
+        print('dummy loop ' .. tostring(i))
+        script.sleep(1, 'frames')
+    end
     local files = get_test_files()
 
     print('Looking for title screen...')
     for i = 1, 100 do
+        print('loop ' .. tostring(i))
         local scr = dfhack.gui.getCurViewscreen()
         if df.viewscreen_titlest:is_instance(scr) then
             break
