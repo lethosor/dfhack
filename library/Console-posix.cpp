@@ -831,11 +831,6 @@ bool Console::init(bool sharing)
     d = new Private();
     // make our own weird streams so our IO isn't redirected
     d->dfout_C = fopen("/dev/tty", "w");
-    if (getenv("DFHACK_DISABLE_CONSOLE"))
-    {
-        std::cerr << "Console input is disabled (DFHACK_DISABLE_CONSOLE)" << std::endl;
-        return false;
-    }
     std::cin.tie(this);
     clear();
     d->supported_terminal = !isUnsupportedTerm() &&  isatty(STDIN_FILENO);
