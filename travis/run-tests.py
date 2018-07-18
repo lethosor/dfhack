@@ -31,11 +31,18 @@ while True:
         print('Too many tries - aborting')
         sys.exit(1)
 
-    process = subprocess.Popen([dfhack], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    tests_started = False
-    for line in process.stdout.readlines():
-        if 'dfhack-test-start' in line:
-            tests_started = True
-        elif tests_started:
-            sys.stdout.write(text)
-            sys.stdout.flush()
+    # os.system(dfhack)
+    process = subprocess.Popen([dfhack], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+    out, err = process.communicate()
+
+    # print(repr(out))
+    # print(repr(err))
+    # tests_started = False
+    # for line in process.stdout.readlines():
+    #     if 'dfhack-test-start' in line:
+    #         tests_started = True
+    #     elif tests_started:
+    #         sys.stdout.write(text)
+    #         sys.stdout.flush()
+    #     else:
+    #         sys.stdout.write('bad? ' + repr(line) + '\n')
