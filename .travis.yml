@@ -13,6 +13,7 @@ addons:
       - libsdl1.2-dev
       - libxml-libxml-perl
       - libxml-libxslt-perl
+      - libxrandr-dev
       - ninja-build
       - zlib1g-dev
 matrix:
@@ -55,6 +56,7 @@ script:
 - cp travis/dfhack_travis.init "$DF_FOLDER"/
 - python travis/run-tests.py "$DF_FOLDER"
 - python travis/check-rpc.py "$DF_FOLDER/dfhack-rpc.txt"
+- cat "$DF_FOLDER/stderr.log"
 notifications:
   email: false
   # irc:
