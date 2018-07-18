@@ -55,8 +55,8 @@ script:
 - python travis/check-rpc.py "$DF_FOLDER/dfhack-rpc.txt"
 notifications:
   email: false
-  irc:
-    channels:
-      - "chat.freenode.net#dfhack"
-    on_success: change
-    on_failure: always
+  # irc:
+  #   channels:
+  #     - "chat.freenode.net#dfhack"
+  #   on_success: change
+  #   on_failure: always
