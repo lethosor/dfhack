@@ -11,10 +11,12 @@ addons:
       - libsdl-image1.2-dev
       - libsdl-ttf2.0-dev
       - libsdl1.2-dev
+      - libxcb-randr0
       - libxml-libxml-perl
       - libxml-libxslt-perl
       - libxrandr-dev
       - ninja-build
+      - x11proto-randr-dev
       - zlib1g-dev
 matrix:
   include:
