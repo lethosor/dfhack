@@ -41,7 +41,7 @@ release, you can check out the ``master`` branch instead::
 In general, a single DFHack clone is suitable for development - most Git
 operations such as switching branches can be done on an existing clone. If you
 find yourself cloning DFHack frequently as part of your development process, or
-getting stuck on anything else Git-related, feel free to reach out to us for
+getting stuck on anything else Git-related, feel free to `reach out to us <support>` for
 assistance.
 
 .. admonition:: A note on submodules
