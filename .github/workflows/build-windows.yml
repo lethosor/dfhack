@@ -1,0 +1,65 @@
+name: Build (Windows)
+
+on: push
+
+jobs:
+  build:
+    runs-on: windows-2019
+    steps:
+    - name: Install dependencies
+      run: |
+        choco install ninja
+        cpan XML::LibXML XML::LibXSLT
+        pip install sphinx
+    - name: Clone DFHack
+      uses: actions/checkout@v1
+      with:
+        fetch-depth: 0  # unlimited - we need past tags
+        submodules: true
+    - name: Set up environment
+      id: env_setup
+      shell: bash
+      run: |
+        DF_VERSION="$(sh travis/get-df-version.sh)"
+        echo "::set-env name=DF_VERSION::${DF_VERSION}"
+        echo "::set-output name=df_version::${DF_VERSION}"
+        echo "::set-env name=DF_FOLDER::${HOME}/DF/${DF_VERSION}/df_linux"
+    - name: Fetch DF cache
+      uses: actions/cache@v2
+      with:
+        path: ~/DF
+        key: ${{ steps.env_setup.outputs.df_version }}
+    - name: Download DF
+      run: |
+        sh travis/download-df.sh
+    - name: Build DFHack
+      run: |
+        cmake \
+          -S . \
+          -B build-ci \
+          -G Ninja \
+          -DDFHACK_BUILD_ARCH=64 \
+          -DBUILD_DOCS:BOOL=ON \
+          -DBUILD_TESTS:BOOL=ON \
+          -DCMAKE_INSTALL_PREFIX="$DF_FOLDER"
+        ninja -C build-ci install
+    - name: Run tests
+      run: |
+        export TERM=dumb
+        mv "$DF_FOLDER"/dfhack.init-example "$DF_FOLDER"/dfhack.init
+        script -qe -c "python travis/run-tests.py --headless --keep-status \"$DF_FOLDER\""
+        python travis/check-rpc.py "$DF_FOLDER/dfhack-rpc.txt"
+        mkdir -p artifacts
+        cp "$DF_FOLDER/test_status.json" "$DF_FOLDER"/*.log artifacts
+    - name: Upload test artifacts
+      uses: actions/upload-artifact@v1
+      if: success() || failure()
+      with:
+        name: test-artifacts
+        path: artifacts
+    - name: Clean up DF folder
+      # to prevent DFHack-generated files from ending up in the cache
+      # (download-df.sh also removes them, this is just to save cache space)
+      if: success() || failure()
+      run: |
+        rm -rf "$DF_FOLDER"
