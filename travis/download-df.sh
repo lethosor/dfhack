@@ -15,7 +15,7 @@ case "$(uname)" in
         platform=linux
         suffix=tar.bz2
         ;;
-    *Win*)
+    *Win*|*MINGW*)
         platform=win
         suffix=zip
         ;;

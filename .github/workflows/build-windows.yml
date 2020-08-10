@@ -8,7 +8,7 @@ jobs:
     steps:
     - name: Install dependencies
       run: |
-        choco install -y ninja strawberryperl wget
+        choco install -y ninja wget
         pip install sphinx
     - name: Clone DFHack
       uses: actions/checkout@v1
