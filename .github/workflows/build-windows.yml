@@ -32,6 +32,7 @@ jobs:
       run: |
         sh travis/download-df.sh
     - name: Build DFHack
+      shell: bash
       run: |
         cmake \
           -S . \
@@ -43,6 +44,7 @@ jobs:
           -DCMAKE_INSTALL_PREFIX="$DF_FOLDER"
         ninja -C build-ci install
     - name: Run tests
+      shell: bash
       run: |
         export TERM=dumb
         mv "$DF_FOLDER"/dfhack.init-example "$DF_FOLDER"/dfhack.init
