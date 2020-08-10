@@ -10,6 +10,22 @@ echo $selfmd5
 cd "$(dirname "$0")"
 echo "DF_VERSION: $DF_VERSION"
 echo "DF_FOLDER: $DF_FOLDER"
+case "$(uname)" in
+    Linux)
+        platform=linux
+        suffix=tar.bz2
+        ;;
+    *Win*)
+        platform=win
+        suffix=zip
+        ;;
+    *)
+        echo "Unknown platform: $(uname)"
+        exit 1
+        ;;
+esac
+echo "platform: ${platform}"
+
 mkdir -p "$DF_FOLDER"
 # back out of df_linux
 cd "$DF_FOLDER/.."
@@ -27,7 +43,7 @@ if [ ! -f receipt ]; then
     rm -f "$tardest"
     minor=$(echo "$DF_VERSION" | cut -d. -f2)
     patch=$(echo "$DF_VERSION" | cut -d. -f3)
-    url="http://www.bay12games.com/dwarves/df_${minor}_${patch}_linux.tar.bz2"
+    url="http://www.bay12games.com/dwarves/df_${minor}_${patch}_${platform}.${suffix}"
     echo Downloading
     while read url; do
         echo "Attempting download: ${url}"
@@ -35,8 +51,8 @@ if [ ! -f receipt ]; then
             break
         fi
     done <<URLS
-    https://www.bay12games.com/dwarves/df_${minor}_${patch}_linux.tar.bz2
-    https://files.dfhack.org/DF/0.${minor}.${patch}/df_${minor}_${patch}_linux.tar.bz2
+    https://www.bay12games.com/dwarves/df_${minor}_${patch}_${platform}.${suffix}
+    https://files.dfhack.org/DF/0.${minor}.${patch}/df_${minor}_${patch}_${platform}.${suffix}
 URLS
     echo $tardest
     if ! test -f "$tardest"; then
@@ -45,11 +61,15 @@ URLS
     fi
 fi
 
-rm -rf df_linux
-mkdir df_linux
+rm -rf "df_${platform}"
+mkdir "df_${platform}"
 
 echo Extracting
-tar xf "$tardest" --strip-components=1 -C df_linux
+if [[ "${suffix}" = "zip" ]]; then
+    unzip "$tardest" -d "df_${platform}"
+else
+    tar xf "$tardest" --strip-components=1 -C "df_${platform}"
+fi
 echo Done
 
 echo "$selfmd5" > receipt
