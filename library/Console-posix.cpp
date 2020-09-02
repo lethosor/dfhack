@@ -421,8 +421,9 @@ namespace DFHack
             else
             {
                 int count;
-                if (enable_raw() == -1) return 0;
-                if(state == con_lineedit)
+                if (enable_raw() == -1)
+                    return Console::SHUTDOWN;
+                if (state == con_lineedit)
                     return Console::FAILURE;
                 state = con_lineedit;
                 count = prompt_loop(lock,ch);
@@ -976,6 +977,7 @@ int Console::lineedit(const std::string & prompt, std::string & output, CommandH
     if(inited) {
         ret = d->lineedit(prompt,output,wlock,ch);
         if (ret == Console::SHUTDOWN) {
+            print("Console shutting down\n");
             // kill the thing
             if(d->rawmode)
                 d->disable_raw();
