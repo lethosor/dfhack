@@ -483,6 +483,14 @@ function dfhack.interpreter(prompt,hfile,env)
         end
     }
 
+    local function load_expr(expr, retry_with_return)
+        local code, err = load(expr, '=(interactive)', 't', prompt_env)
+        if not code and retry_with_return then
+            return load_expr('return ' .. expr, false)
+        end
+        return code, err
+    end
+
     setmetatable(prompt_env, { __index = env or _G })
 
     while true do
@@ -502,7 +510,7 @@ function dfhack.interpreter(prompt,hfile,env)
             table.insert(cmdlinelist,cmdline)
             cmdline = table.concat(cmdlinelist,'\n')
 
-            local code,err = load(cmdline, '=(interactive)', 't', prompt_env)
+            local code,err = load_expr(cmdline, not pfix)
 
             if code == nil then
                 if not pfix and err:sub(-5)=="<eof>" then
@@ -520,7 +528,7 @@ function dfhack.interpreter(prompt,hfile,env)
 
                 if data[1] and data.n > 1 then
                     prompt_env._ = data[2]
-                    safecall(pfix_handlers[pfix], data)
+                    safecall(pfix_handlers[pfix or '!'], data)
                 end
             end
         end
