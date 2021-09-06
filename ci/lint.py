@@ -90,6 +90,16 @@ class NewlineLinter(Linter):
     def fix_line(self, line):
         return line.replace('\r', '')
 
+class EOFNewlineLinter(Linter):
+    msg = 'Missing newline at end of file'
+    def check(self, lines):
+        if len(lines) > 0 and lines[-1] != '':
+            raise LinterError(self.msg, [len(lines)], len(lines))
+    def fix(self, lines):
+        if len(lines) == 0 or lines[-1] != '':
+            lines.append('')
+        print('fix->', lines)
+
 class TrailingWhitespaceLinter(Linter):
     msg = 'Contains trailing whitespace'
     def check_line(self, line):
