@@ -314,7 +314,7 @@ namespace DFHack
             {
                 const char * clr = "\033c\033[3J\033[H";
                 if (::write(STDIN_FILENO,clr,strlen(clr)) == -1)
-                    ;
+                    { }
             }
             else
             {
@@ -339,7 +339,7 @@ namespace DFHack
                 const char * colstr = getANSIColor(index);
                 int lstr = strlen(colstr);
                 if (::write(STDIN_FILENO,colstr,lstr) == -1)
-                    ;
+                    { }
             }
         }
         /// Reset color to default
@@ -768,6 +768,7 @@ namespace DFHack
                 case 12: // ctrl+l, clear screen
                     clear();
                     prompt_refresh();
+                    // fall through
                 default:
                     if (c >= 32)  // Space
                     {
@@ -863,7 +864,7 @@ bool Console::init(bool dont_redirect)
     else
     {
         if (!freopen("stdout.log", "w", stdout))
-            ;
+            { }
         d->dfout_C = fopen("/dev/tty", "w");
         if (!d->dfout_C)
         {
@@ -877,7 +878,7 @@ bool Console::init(bool dont_redirect)
     d->supported_terminal = !isUnsupportedTerm() && isatty(STDIN_FILENO);
     // init the exit mechanism
     if (pipe(d->exit_pipe) == -1)
-        ;
+        { }
     FD_ZERO(&d->descriptor_set);
     FD_SET(STDIN_FILENO, &d->descriptor_set);
     FD_SET(d->exit_pipe[0], &d->descriptor_set);
