@@ -2052,11 +2052,15 @@ void viewscreen_unitlaborsst::render()
         for (int col = 0; col < col_widths[DISP_COLUMN_LABORS]; col++)
         {
             int col_offset = col + first_column;
-            fg = 15;
-            bg = 0;
+            fg = COLOR_WHITE;
+            bg = COLOR_BLACK;
             uint8_t c = 0xFA;
-            if ((col_offset == sel_column) && (row_offset == sel_row))
-                fg = 9;
+            bool is_cell_selected = (col_offset == sel_column) && (row_offset == sel_row);
+            if (is_cell_selected)
+            {
+                fg = COLOR_LIGHTGREEN;
+                bg = COLOR_BLUE;
+            }
             if (columns[col_offset].skill != job_skill::NONE)
             {
                 df::unit_skill *skill = NULL;
@@ -2076,13 +2080,21 @@ void viewscreen_unitlaborsst::render()
             {
                 if (unit->status.labors[columns[col_offset].labor])
                 {
-                    bg = 7;
+                    bg = COLOR_GREY;
+                    if (is_cell_selected)
+                    {
+                        fg = COLOR_BLACK;
+                        bg = COLOR_LIGHTGREEN;
+                    }
                     if (columns[col_offset].skill == job_skill::NONE)
                         c = 0xF9;
                 }
             }
             else
-                bg = 3;
+            {
+                if (!is_cell_selected)
+                    bg = COLOR_CYAN;
+            }
             Screen::paintTile(Screen::Pen(c, fg, bg), col_offsets[DISP_COLUMN_LABORS] + col, 4 + row);
         }
     }
