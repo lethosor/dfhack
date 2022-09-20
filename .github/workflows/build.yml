@@ -12,14 +12,9 @@ jobs:
         os:
         - ubuntu-18.04
         gcc:
-        - 4.8
-        - 7
+        - 5
         plugins:
-        - default
-        include:
-        - os: ubuntu-22.04
-          gcc: 12
-          plugins: all
+        - all
     steps:
     - name: Set up Python 3
       uses: actions/setup-python@v2
