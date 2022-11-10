@@ -465,8 +465,9 @@ bool Plugin::reload(color_ostream &out)
     return true;
 }
 
-command_result Plugin::invoke(color_ostream &out, const std::string & command, std::vector <std::string> & parameters)
+command_result Plugin::invoke(color_ostream &out, const std::string & command, const std::vector <std::string> & parameters)
 {
+    auto parameters_copy = parameters;
     Core & c = Core::getInstance();
     command_result cr = CR_NOT_IMPLEMENTED;
     access->lock_add();
@@ -496,12 +497,12 @@ command_result Plugin::invoke(color_ostream &out, const std::string & command, s
                     }
                     else
                     {
-                        cr = cmd.function(out, parameters);
+                        cr = cmd.function(out, parameters_copy);
                     }
                 }
                 else
                 {
-                    cr = cmd.function(out, parameters);
+                    cr = cmd.function(out, parameters_copy);
                 }
                 break;
             }
@@ -996,7 +997,7 @@ Plugin *PluginManager::getPluginByCommand(const std::string &command)
 }
 
 // FIXME: handle name collisions...
-command_result PluginManager::InvokeCommand(color_ostream &out, const std::string & command, std::vector <std::string> & parameters)
+command_result PluginManager::InvokeCommand(color_ostream &out, const std::string & command, const std::vector <std::string> & parameters)
 {
     Plugin *plugin = getPluginByCommand(command);
     return plugin ? plugin->invoke(out, command, parameters) : CR_NOT_IMPLEMENTED;

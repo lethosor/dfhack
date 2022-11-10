@@ -278,7 +278,7 @@ static string dfhack_version_desc()
 namespace {
     struct ScriptArgs {
         const string *pcmd;
-        vector<string> *pargs;
+        const vector<string> *pargs;
     };
     struct ScriptEnableState {
         const string *pcmd;
@@ -300,7 +300,7 @@ static bool init_run_script(color_ostream &out, lua_State *state, void *info)
     return true;
 }
 
-static command_result runLuaScript(color_ostream &out, std::string name, vector<string> &args)
+static command_result runLuaScript(color_ostream &out, std::string name, const vector<string> &args)
 {
     ScriptArgs data;
     data.pcmd = &name;
@@ -335,7 +335,7 @@ static command_result enableLuaScript(color_ostream &out, std::string name, bool
     return ok ? CR_OK : CR_FAILURE;
 }
 
-static command_result runRubyScript(color_ostream &out, PluginManager *plug_mgr, std::string filename, vector<string> &args)
+static command_result runRubyScript(color_ostream &out, PluginManager *plug_mgr, std::string filename, const vector<string> &args)
 {
     if (!plug_mgr->ruby || !plug_mgr->ruby->is_enabled())
         return CR_FAILURE;
@@ -658,7 +658,7 @@ void ls_helper(color_ostream &con, const vector<string> &params) {
     }
 }
 
-command_result Core::runCommand(color_ostream &con, const std::string &first_, vector<string> &parts)
+command_result Core::runCommand(color_ostream &con, const std::string &first_, const vector<string> &parts)
 {
     std::string first = first_;
     CommandDepthCounter counter;
@@ -1093,16 +1093,14 @@ command_result Core::runCommand(color_ostream &con, const std::string &first_, v
         }
         else if (parts[0] == "list")
         {
-            if(parts.size() < 2)
-                parts.push_back("");
-            if (parts[1].size() && sc_event_id(parts[1]) == SC_UNKNOWN)
+            if (parts.size() >= 2 && parts[1].size() && sc_event_id(parts[1]) == SC_UNKNOWN)
             {
                 con << "Unrecognized event name: " << parts[1] << endl;
                 return CR_WRONG_USAGE;
             }
             for (auto it = state_change_scripts.begin(); it != state_change_scripts.end(); ++it)
             {
-                if (!parts[1].size() || (it->event == sc_event_id(parts[1])))
+                if (parts.size() < 2 || !parts[1].size() || (it->event == sc_event_id(parts[1])))
                 {
                     con.print("%s (%s): %s%s\n", sc_event_name(it->event).c_str(),
                         it->save_specific ? "save-specific" : "global",

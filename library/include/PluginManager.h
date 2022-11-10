@@ -176,7 +176,7 @@ namespace DFHack
         bool can_set_enabled() { return plugin_is_enabled != 0 && plugin_enable; }
         command_result set_enabled(color_ostream &out, bool enable);
 
-        command_result invoke(color_ostream &out, const std::string & command, std::vector <std::string> & parameters);
+        command_result invoke(color_ostream &out, const std::string & command, const std::vector <std::string> & parameters);
         bool can_invoke_hotkey(const std::string & command, df::viewscreen *top );
         plugin_state getState () const;
 
@@ -278,7 +278,7 @@ namespace DFHack
 
         Plugin *getPluginByName (const std::string &name) { return (*this)[name]; }
         Plugin *getPluginByCommand (const std::string &command);
-        command_result InvokeCommand(color_ostream &out, const std::string & command, std::vector <std::string> & parameters);
+        command_result InvokeCommand(color_ostream &out, const std::string & command, const std::vector <std::string> & parameters);
         bool CanInvokeHotkey(const std::string &command, df::viewscreen *top);
         Plugin* operator[] (const std::string name);
         std::size_t size();
