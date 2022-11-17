@@ -622,7 +622,7 @@ DFhackCExport command_result plugin_enable(color_ostream& out, bool enable)
 
 DFhackCExport command_result plugin_init(color_ostream& out, std::vector <PluginCommand>& commands)
 {
-    tailor_instance = std::move(dts::make_unique<Tailor>());
+    tailor_instance = dts::make_unique<Tailor>();
 
     if (AUTOENABLE) {
         enabled = true;

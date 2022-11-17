@@ -354,7 +354,7 @@ DFhackCExport command_result plugin_init(color_ostream& out, std::vector <Plugin
                           "Automatically manage farm crop selection.",
                           autofarm));
     }
-    autofarmInstance = std::move(dts::make_unique<AutoFarm>());
+    autofarmInstance = dts::make_unique<AutoFarm>();
     return CR_OK;
 }
 

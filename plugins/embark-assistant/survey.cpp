@@ -64,8 +64,8 @@ using df::global::world;
 namespace embark_assist {
     namespace survey {
         struct states {
-            uint16_t clay_reaction = -1;
-            uint16_t flux_reaction = -1;
+            int32_t clay_reaction = -1;
+            int32_t flux_reaction = -1;
             std::vector<uint16_t> coals;
             uint16_t x;
             uint16_t y;

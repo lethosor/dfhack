@@ -1,9 +1,7 @@
-if(UNIX)
-    if(NOT APPLE)
-        # Linux: Check for unresolved symbols at link time
-        set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-z,defs")
-        set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-z,defs")
-    endif()
+if(UNIX AND (NOT APPLE) AND (CMAKE_CXX_COMPILER_ID STREQUAL "GNU"))
+    # Linux GCC: Check for unresolved symbols at link time
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wl,-z,defs")
+    set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wl,-z,defs")
 endif()
 
 include_directories("${dfhack_SOURCE_DIR}/library/include")

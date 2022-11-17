@@ -125,7 +125,7 @@ command_result fix_job_postings_cmd(color_ostream &out, vector<string> &paramete
 
 const int DAY_TICKS = 1200;
 const int MONTH_DAYS = 28;
-const int YEAR_MONTHS = 12;
+// const int YEAR_MONTHS = 12;
 
 struct ItemConstraint;
 

@@ -675,7 +675,7 @@ public:
         depot_info.reset();
     }
 
-    void feed(set<df::interface_key> *input)
+    void feed(set<df::interface_key> *input) override
     {
         if (input->count(interface_key::LEAVESCREEN))
         {
@@ -905,7 +905,7 @@ public:
         Gui::getCurViewscreen(true)->feed(&keys);
     }
 
-    void render()
+    void render() override
     {
         if (Screen::isDismissed(this))
             return;
@@ -973,7 +973,7 @@ public:
         OutputHotkeyString(x, y, "Search help", interface_key::HELP, true, left_margin);
     }
 
-    std::string getFocusString() { return "stocks_view"; }
+    std::string getFocusString() override { return "stocks_view"; }
 
     df::item *getSelectedItem() override
     {
@@ -1330,7 +1330,7 @@ private:
         set_to_limit(selected_column, 0);
     }
 
-    void resize(int32_t x, int32_t y)
+    void resize(int32_t x, int32_t y) override
     {
         dfhack_viewscreen::resize(x, y);
         items_column.resize();

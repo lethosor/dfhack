@@ -809,7 +809,7 @@ private:
         return get_unit_description(element.unit);
     }
 
-    bool should_check_input()
+    bool should_check_input(set<df::interface_key> *)
     {
         return viewscreen->mode == T_mode::List;
     }
@@ -2242,7 +2242,7 @@ public:
     KVEC(df::kitchen_pref_flag, possible)
 
 
-    virtual void do_post_init()
+    void do_post_init() override
     {
         kitchen_pref_search_base::do_post_init();
         #define KVEC(type, name) name = &viewscreen->name[viewscreen->page]
@@ -2250,49 +2250,49 @@ public:
         #undef KVEC
     }
 
-    void save_secondary_values()
+    void save_secondary_values() override
     {
         #define KVEC(type, name) name##_s = *name
         KITCHEN_VECTORS;
         #undef KVEC
     }
 
-    void reset_secondary_viewscreen_vectors()
+    void reset_secondary_viewscreen_vectors() override
     {
         #define KVEC(type, name) name = nullptr
         KITCHEN_VECTORS;
         #undef KVEC
     }
 
-    virtual void update_saved_secondary_list_item(size_t i, size_t j)
+    virtual void update_saved_secondary_list_item(size_t i, size_t j) override
     {
         #define KVEC(type, name) name##_s[i] = (*name)[j];
         KITCHEN_VECTORS;
         #undef KVEC
     }
 
-    void clear_secondary_viewscreen_vectors()
+    void clear_secondary_viewscreen_vectors() override
     {
         #define KVEC(type, name) name->clear()
         KITCHEN_VECTORS;
         #undef KVEC
     }
 
-    void add_to_filtered_secondary_lists(size_t i)
+    void add_to_filtered_secondary_lists(size_t i) override
     {
         #define KVEC(type, name) name->push_back(name##_s[i])
         KITCHEN_VECTORS;
         #undef KVEC
     }
 
-    void clear_secondary_saved_lists()
+    void clear_secondary_saved_lists() override
     {
         #define KVEC(type, name) name##_s.clear()
         KITCHEN_VECTORS;
         #undef KVEC
     }
 
-    void restore_secondary_values()
+    void restore_secondary_values() override
     {
         #define KVEC(type, name) *name = name##_s
         KITCHEN_VECTORS;

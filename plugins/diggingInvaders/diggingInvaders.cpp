@@ -512,6 +512,7 @@ void findAndAssignInvasionJob(color_ostream& out, void* tickTime) {
         }
         delete myEdges;
     }
+    (void)totalEdgeTime; // todo: convert to debug log
     // clock_t time = clock() - t0;
     //out.print("tickTime = %d, time = %d, totalEdgeTime = %d, total points = %d, total edges = %d, time per point = %.3f, time per edge = %.3f, clocks/sec = %d\n", (int32_t)tickTime, time, totalEdgeTime, closedSet.size(), edgeCount, (float)time / closedSet.size(), (float)time / edgeCount, CLOCKS_PER_SEC);
     fringe.clear();

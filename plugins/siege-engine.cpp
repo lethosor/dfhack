@@ -1519,12 +1519,6 @@ static void releaseTiredWorker(EngineInfo *engine, df::job *job, df::unit *worke
  * Projectile hook
  */
 
-static const int offsets[8][2] = {
-    { -1, -1 }, { 0, -1 }, { 1, -1 },
-    { -1,  0 },            { 1, 0 },
-    { -1,  1 }, { 0,  1 }, { 1, 1 }
-};
-
 struct projectile_hook : df::proj_itemst {
     typedef df::proj_itemst interpose_base;
 
