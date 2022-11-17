@@ -218,7 +218,7 @@ bool virtual_identity::set_vmethod_ptr(MemoryPatcher &patcher, int idx, void *pt
 {
     assert(idx >= 0);
     void **vtable = (void**)vtable_ptr;
-    if (!vtable) return NULL;
+    if (!vtable) return false;
     return patcher.write(&vtable[idx], &ptr, sizeof(void*));
 }
 

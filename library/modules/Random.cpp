@@ -151,6 +151,8 @@ template void DFHACK_EXPORT MersenneRNG::unitvector<double>(double *p, int size)
 
 #include "modules/PerlinNoise.inc"
 
+#ifndef __clang__
 template class DFHACK_EXPORT PerlinNoise<float, 1>;
 template class DFHACK_EXPORT PerlinNoise<float, 2>;
 template class DFHACK_EXPORT PerlinNoise<float, 3>;
+#endif
