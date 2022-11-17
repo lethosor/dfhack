@@ -147,6 +147,9 @@ list(APPEND LIBPROTOBUF_FULL_SRCS ${LIBPROTOBUF_LITE_SRCS})
 if(CMAKE_COMPILER_IS_GNUCC)
     set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-result -Wno-unused-local-typedefs -Wno-misleading-indentation -Wno-class-memaccess -Wno-sign-compare")
+elseif(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedef -Wno-tautological-undefined-compare \
+        -Wno-unused-const-variable -Wno-enum-compare-switch -Wno-unused-function -Wno-null-conversion")
 elseif(MSVC)
     # Disable warnings for integer conversion to smaller type
     set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /wd4267")

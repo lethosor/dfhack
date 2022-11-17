@@ -34,7 +34,7 @@ set(EXPAT_SHARED_LIBS OFF CACHE BOOL "")
 set(EXPAT_BUILD_DOCS OFF CACHE BOOL "")
 set(EXPAT_ENABLE_INSTALL OFF CACHE BOOL "")
 add_subdirectory(libexpat/expat)
-if(UNIX)
+if(CMAKE_CXX_COMPILER_ID STREQUAL "GCC")
     set_target_properties(expat PROPERTIES COMPILE_FLAGS "-Wno-maybe-uninitialized")
 endif()
 

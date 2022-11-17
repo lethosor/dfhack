@@ -100,7 +100,12 @@ if(MSVC)
     target_compile_options(lua PRIVATE "/FIdfhack_llimits.h")
 else()
     target_compile_options(lua PRIVATE -include dfhack_llimits.h)
-    set_source_files_properties(src/lstring.c PROPERTIES COMPILE_FLAGS "-Wno-stringop-overflow")
+    if(CMAKE_CXX_COMPILER_ID STREQUAL "Clang")
+        target_compile_options(lua PRIVATE -x c++)
+        set_source_files_properties(src/lundump.c PROPERTIES COMPILE_FLAGS "-Wno-string-plus-int")
+    else()
+        set_source_files_properties(src/lstring.c PROPERTIES COMPILE_FLAGS "-Wno-stringop-overflow")
+    endif()
 endif()
 
 install(TARGETS lua
