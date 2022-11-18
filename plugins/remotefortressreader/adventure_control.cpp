@@ -42,7 +42,7 @@ command_result MoveCommand(DFHack::color_ostream &stream, const MoveCommandParam
     auto viewScreen = getCurViewscreen();
     if (!in->has_direction())
         return CR_WRONG_USAGE;
-    if (!df::global::ui_advmode->menu == ui_advmode_menu::Default)
+    if (df::global::ui_advmode->menu != ui_advmode_menu::Default)
         return CR_OK;
     auto dir = in->direction();
     switch (dir.x())
@@ -193,7 +193,7 @@ command_result JumpCommand(DFHack::color_ostream &stream, const MoveCommandParam
 {
     if (!in->has_direction())
         return CR_WRONG_USAGE;
-    if (!df::global::ui_advmode->menu == ui_advmode_menu::Default)
+    if (df::global::ui_advmode->menu != ui_advmode_menu::Default)
         return CR_OK;
     auto dir = in->direction();
     keyQueue.push(interface_key::A_JUMP);
@@ -293,7 +293,7 @@ command_result MovementSelectCommand(DFHack::color_ostream &stream, const dfprot
 
 command_result MiscMoveCommand(DFHack::color_ostream &stream, const MiscMoveParams *in)
 {
-    if (!df::global::ui_advmode->menu == ui_advmode_menu::Default)
+    if (df::global::ui_advmode->menu != ui_advmode_menu::Default)
         return CR_OK;
 
     auto type = in->type();
