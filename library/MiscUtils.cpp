@@ -476,6 +476,13 @@ DFHACK_EXPORT std::string DF2CONSOLE(DFHack::color_ostream &out, const std::stri
     return out.is_console() ? DF2CONSOLE(in) : in;
 }
 
+// forward-declare to avoid circular imports
+namespace DFHack {
+    struct DFLibrary;
+    DFHACK_EXPORT DFLibrary * OpenPlugin (const char * filename);
+    DFHACK_EXPORT void * LookupPlugin (DFLibrary * plugin ,const char * function);
+}
+
 DFHACK_EXPORT std::string cxx_demangle(const std::string &mangled_name, std::string *status_out)
 {
 #ifdef __GNUC__
