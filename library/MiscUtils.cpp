@@ -33,6 +33,7 @@ distribution.
 // We don't want min and max macros
 #define NOMINMAX
     #include <Windows.h>
+    // for constants only - functions are dynamically loaded:
     #include <dbghelp.h>
 #else
     #include <sys/time.h>
@@ -494,6 +495,25 @@ DFHACK_EXPORT std::string cxx_demangle(const std::string &mangled_name, std::str
     }
     return out;
 #elif defined(_WIN32)
+    static bool initialized = false;
+    static DFLibrary* dbghelp_dll;
+    static DWORD IMAGEAPI (*UnDecorateSymbolName)(PCSTR name, PSTR outputString, DWORD maxStringLength, DWORD flags);
+
+    if (!initialized) {
+        initialized = true;
+        dbghelp_dll = DFHack::OpenPlugin("dbghelp.dll");
+        if (dbghelp_dll) {
+            UnDecorateSymbolName = (decltype(UnDecorateSymbolName))LookupPlugin(dbghelp_dll, "UnDecorateSymbolName");
+        }
+    }
+
+    if (!UnDecorateSymbolName) {
+        if (status_out) {
+            *status_out = "failed to load dbghelp.dll:UnDecorateSymbolName";
+        }
+        return "";
+    }
+
     char buf[1024] = {0};
     if (!UnDecorateSymbolName(mangled_name.c_str(), buf, sizeof(buf), 0)) {
         if (status_out) {
