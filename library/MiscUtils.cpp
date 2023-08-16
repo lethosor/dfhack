@@ -33,6 +33,7 @@ distribution.
 // We don't want min and max macros
 #define NOMINMAX
     #include <Windows.h>
+    #include <dbghelp.h>
 #else
     #include <sys/time.h>
     #include <ctime>
@@ -492,6 +493,24 @@ DFHACK_EXPORT std::string cxx_demangle(const std::string &mangled_name, std::str
         else *status_out = "unknown error";
     }
     return out;
+#elif defined(_WIN32)
+    char buf[1024] = {0};
+    if (!UnDecorateSymbolName(mangled_name.c_str(), buf, sizeof(buf), 0)) {
+        if (status_out) {
+            DWORD error = GetLastError();
+            LPSTR error_buf = NULL;
+            DWORD len = FormatMessageA(FORMAT_MESSAGE_ALLOCATE_BUFFER | FORMAT_MESSAGE_FROM_SYSTEM | FORMAT_MESSAGE_IGNORE_INSERTS,
+                    NULL, error, MAKELANGID(LANG_NEUTRAL, SUBLANG_DEFAULT), (LPSTR)&error_buf, 0, NULL);
+            if (error_buf) {
+                *status_out = error_buf;
+                LocalFree(error_buf);
+            }
+            else {
+                *status_out = stl_sprintf("unhandled error 0x%x", error);
+            }
+        }
+    }
+    return std::string(buf);
 #else
     if (status_out) {
         *status_out = "not implemented on this platform";
